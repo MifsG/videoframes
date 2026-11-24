@@ -65,7 +65,7 @@ button{cursor:pointer;background:none;border:none;padding:0}
 
 /* ── Video stage ────────────────────── */
 .stage{overflow:hidden}
-.stage video{display:block;width:100%;max-height:45vh;background:#000;aspect-ratio:16/9;object-fit:contain}
+.stage video{display:block;width:100%;max-height:45vh;background:#000;aspect-ratio:16/9;object-fit:contain;cursor:pointer}
 .vwrap{position:relative}
 .vwrap::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--line);pointer-events:none}
 .empty-stage{position:relative}
@@ -76,6 +76,10 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .errbar{display:none;align-items:center;gap:10px;padding:9px 14px;background:rgba(226,114,91,.1);border-top:1px solid rgba(226,114,91,.35);color:#f0a28f;font-size:12.5px}
 .errbar.show{display:flex}
 .errbar .spacer{flex:1}
+.play-ind{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);width:72px;height:72px;border-radius:50%;background:rgba(0,0,0,.55);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:5;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.play-ind.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.play-ind svg{width:32px;height:32px;fill:#fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.play-ind svg[hidden]{display:none}
 
 /* ── Timeline ───────────────────────── */
 .tl{position:relative;height:0px;cursor:pointer;touch-action:none;user-select:none;outline-offset:4px}
@@ -83,8 +87,12 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .tl-fill{position:absolute;left:0;top:50%;transform:translateY(-50%);height:5px;width:0;background:var(--accent);border-radius:3px}
 .tl-head{position:absolute;top:50%;left:0;width:13px;height:13px;background:var(--accent);border:2px solid var(--bg);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 6px rgba(0,0,0,.5)}
 .tl-marker{position:absolute;top:50%;width:12px;height:12px;background:#fff;border:2px solid #0c0c0e;border-radius:50%;transform:translate(-50%,-50%);z-index:2;pointer-events:none}
+.tl-marker-range{position:absolute;top:50%;transform:translateY(-50%);height:5px;background:rgba(255,255,255,.6);border-radius:3px;pointer-events:none;z-index:1}
 .tl-cand{position:absolute;top:50%;width:13px;height:13px;border:2px solid var(--accent);background:rgba(217,160,102,.25);border-radius:50%;transform:translate(-50%,-50%);display:none;z-index:3;pointer-events:none;box-shadow:0 0 0 4px rgba(217,160,102,.15)}
 .tl-cand.show{display:block}
+.tl-range{position:absolute;top:50%;transform:translateY(-50%);height:5px;background:rgba(217,160,102,.3);border-radius:3px;display:none;pointer-events:none;z-index:1}
+#tlCand2{position:absolute;top:50%;width:13px;height:13px;border:2px solid var(--accent);background:rgba(217,160,102,.25);border-radius:50%;transform:translate(-50%,-50%);display:none;z-index:3;pointer-events:none;box-shadow:0 0 0 4px rgba(217,160,102,.15)}
+#tlCand2.show{display:block}
 .tl-ghost{position:absolute;bottom:100%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--line2);color:var(--text);font:11px/1 var(--mono);padding:4px 7px;border-radius:5px;white-space:nowrap;display:none;pointer-events:none;z-index:4}
 .tl-ghost.show{display:block}
 .tl-ghost::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--line2)}
@@ -102,6 +110,8 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .iconbtn .badge[hidden]{display:none}
 .rate{background:var(--surface2);border:1px solid var(--line);border-radius:var(--r-sm);height:34px;padding:0 10px;font:500 12px var(--mono);color:var(--muted);flex:none}
 .rate:hover{background:var(--surface3);color:var(--text)}
+.cbtn svg{display:none}
+.cbtn svg.active{display:block}
 
 /* ── Source bar ─────────────────────── */
 .srcbar{display:flex;gap:8px;padding:12px;flex-wrap:wrap;border-top:1px solid var(--line)}
@@ -165,7 +175,7 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
       <span class="mark" aria-hidden="true">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M8 5.5l11 6.5-11 6.5z" fill="#d9a066"/><rect x="4" y="5.5" width="2.4" height="13" rx="1.2" fill="#ececf1"/></svg>
       </span>
-      Video Notes <small>Правки к видео</small>
+      Video Notes <small>Правки к видео by MifsG</small>
     </div>
     <div class="hdr-actions">
       <button class="btn" id="btnImport" title="Загрузить правки из .txt">
@@ -185,6 +195,10 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
     <section class="panel stage" aria-label="Плеер">
       <div class="vwrap" id="vwrap">
         <video id="video" preload="auto" playsinline hidden oncontextmenu="event.preventDefault()"></video>
+        <div class="play-ind" id="playInd" aria-hidden="true">
+          <svg id="indPlay" viewBox="0 0 24 24" hidden><path d="M8 5.5v13l11-6.5z"/></svg>
+          <svg id="indPause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg>
+        </div>
       </div>
       <div class="errbar" id="errbar" role="alert">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5m0 3h.01"/></svg>
@@ -194,13 +208,15 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
       <div class="tl" id="tl" tabindex="0" aria-label="Таймлайн. Клик — перемотка. Двойной клик или клавиша C — отметить момент и написать правку">
         <div class="tl-rail"></div>
         <div class="tl-fill" id="tlFill"></div>
+        <div class="tl-range"></div>
+        <div class="tl-cand" id="tlCand2"></div>
         <div class="tl-cand" id="tlCand"></div>
         <div class="tl-ghost" id="tlGhost">00:00</div>
         <div class="tl-head" id="tlHead"></div>
       </div>
       <div class="controls">
         <button class="cbtn" id="btnPlay" aria-label="Пауза">
-          <svg id="icPlay" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M8 5.5v13l11-6.5z"/></svg>
+          <svg id="icPlay" class="active" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
           <svg id="icPause" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg>
         </button>
         <button class="iconbtn" id="btnBack" title="Назад 5 секунд" aria-label="Назад 5 секунд">
@@ -247,10 +263,11 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
         <div class="comp-row">
           <span class="tiny"><span class="kbd">Enter</span> добавить · <span class="kbd">Esc</span> отменить</span>
           <span class="spacer"></span>
+          <button type="button" class="btn sm" id="btnSetEnd" title="Отметить конец фрагмента">Конец фрагмента</button>
           <button type="button" class="btn sm" id="btnClearMark">Отмена</button>
           <button type="submit" class="btn sm primary" id="btnAdd" disabled>
             <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            Добавить комментарий
+            Добавить
           </button>
         </div>
       </form>
@@ -266,7 +283,7 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
         <button class="btn sm danger" id="btnClear" title="Удалить все правки">Очистить</button>
       </div>
       <ol class="edits" id="editsList"></ol>
-      <p class="hint">Клик по строке — перемотка к правке. Формат файла: <span style="font-family:var(--mono)">ЧЧ:ММ:СС — текст</span>. Отметки хранятся в этом браузере.</p>
+      <p class="hint">Клик по строке — перемотка к правке. Формат файла: <span style="font-family:var(--mono)">ЧЧ:ММ:СС — текст</span> или <span style="font-family:var(--mono)">ЧЧ:ММ:СС–ЧЧ:ММ:СС — текст</span>. Отметки хранятся в этом браузере.</p>
     </section>
   </div>
 
@@ -290,6 +307,15 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
 (()=>{
 "use strict";
 const $=s=>document.querySelector(s);
+const playInd=$("#playInd"),indPlay=$("#indPlay"),indPause=$("#indPause");
+let indTimer;
+function flashIndicator(isPlay){
+  indPlay.hidden=isPlay;
+  indPause.hidden=!isPlay;
+  playInd.classList.add("show");
+  clearTimeout(indTimer);
+  indTimer=setTimeout(()=>playInd.classList.remove("show"),450);
+}
 const video=$("#video"),vwrap=$("#vwrap"),tl=$("#tl"),tlFill=$("#tlFill"),tlHead=$("#tlHead"),
       tlCand=$("#tlCand"),tlGhost=$("#tlGhost"),timeLabel=$("#timeLabel"),
       comp=$("#comp"),compText=$("#compText"),compTc=$("#compTc"),btnAdd=$("#btnAdd"),
@@ -306,25 +332,65 @@ const state={edits:[],marker:null,activeId:null,videoOpen:false,rateIdx:1};
 const pad=n=>String(n).padStart(2,"0");
 const fmt=t=>{t=Math.max(0,t|0);const h=t/3600|0,m=(t/60|0)%60,s=t%60;return(h?pad(h)+":":"")+pad(m)+":"+pad(s)};
 const fmtFull=t=>{t=Math.max(0,t|0);return pad(t/3600|0)+":"+pad((t/60|0)%60)+":"+pad(t%60)};
+
+function parseTime(str){
+  const parts=str.split(":");
+  let h=0,m=0,s=0,ms=0;
+  if(parts.length===3){
+    h=+parts[0]; m=+parts[1];
+    const secParts=parts[2].split(/[.,]/);
+    s=+secParts[0];
+    ms=secParts[1]?+("0."+secParts[1]):0;
+  }else if(parts.length===2){
+    m=+parts[0];
+    const secParts=parts[1].split(/[.,]/);
+    s=+secParts[0];
+    ms=secParts[1]?+("0."+secParts[1]):0;
+  }
+  return h*3600+m*60+s+ms;
+}
+
 function parseImport(text){
   const res=[];
   for(const raw of String(text).split(/\r?\n/)){
     const line=raw.trim();
     if(!line)continue;
-    let m=line.match(/^(\d{1,3}):([0-5]?\d)(?::([0-5]?\d)(?:[.,](\d+))?)?\s*[-–—:]+\s*(.+)$/);
-    let t,cap;
-    if(m){t=+m[1]*3600+ +m[2]*60+ +(m[3]||0)+(m[4]?+("0."+m[4]):0);cap=m[5];}
-    else{
-      m=line.match(/^(\d{1,3}):([0-5]?\d)(?::([0-5]?\d)(?:[.,](\d+))?)?\s+(.+)$/);
-      if(!m)continue;
-      t=+m[1]*3600+ +m[2]*60+ +(m[3]||0)+(m[4]?+("0."+m[4]):0);cap=m[5];
+    
+    // Пробуем формат с диапазоном: ЧЧ:ММ:СС–ЧЧ:ММ:СС — текст
+    let m=line.match(/^(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s*[–—-]\s*(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s*[-–—:]+\s*(.+)$/);
+    if(m){
+      const t1=parseTime(m[1]), t2=parseTime(m[2]);
+      let cap=m[3].replace(/^["«'`]+|["»'`]+$/g,"").trim();
+      if(cap&&isFinite(t1)&&isFinite(t2)&&t1>=0&&t2>=t1){
+        res.push({t1,t2,c:cap});
+        continue;
+      }
     }
-    cap=cap.replace(/^["«'`]+|["»'`]+$/g,"").trim();
-    if(!cap||!isFinite(t)||t<0)continue;
-    res.push({t,c:cap});
+    
+    // Пробуем формат с одним временем: ЧЧ:ММ:СС — текст
+    m=line.match(/^(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s*[-–—:]+\s*(.+)$/);
+    if(m){
+      const t1=parseTime(m[1]);
+      let cap=m[2].replace(/^["«'`]+|["»'`]+$/g,"").trim();
+      if(cap&&isFinite(t1)&&t1>=0){
+        res.push({t1,t2:null,c:cap});
+        continue;
+      }
+    }
+    
+    // Пробуем формат без разделителя: ЧЧ:ММ:СС текст
+    m=line.match(/^(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s+(.+)$/);
+    if(m){
+      const t1=parseTime(m[1]);
+      let cap=m[2].replace(/^["«'`]+|["»'`]+$/g,"").trim();
+      if(cap&&isFinite(t1)&&t1>=0){
+        res.push({t1,t2:null,c:cap});
+      }
+    }
   }
   return res;
 }
+
 let toastTimer;
 function toast(msg,isErr){
   toastEl.textContent=msg;
@@ -341,45 +407,50 @@ function save(){try{localStorage.setItem(STORE,JSON.stringify(state.edits))}catc
 function load(){
   try{
     const a=JSON.parse(localStorage.getItem(STORE));
-    if(Array.isArray(a))state.edits=a.filter(e=>e&&isFinite(e.t)&&typeof e.c==="string");
+    if(Array.isArray(a))state.edits=a.filter(e=>e&&isFinite(e.t1)&&typeof e.c==="string");
   }catch(e){}
 }
 
 /* ── edits ───────────────────────────── */
-const sortedEdits=()=>[...state.edits].sort((a,b)=>a.t-b.t);
-function addEdit(t,text){
+const sortedEdits=()=>[...state.edits].sort((a,b)=>a.t1-b.t1);
+
+function addEdit(t1, t2, text){
   text=String(text||"").replace(/\s+/g," ").trim().slice(0,2000);
   if(!text){toast("Введите текст правки",1);return false}
   if(!(state.videoOpen&&video.duration)){toast("Сначала загрузите видео",1);return false}
-  t=Math.min(Math.max(0,+t||0),video.duration);
+  
+  t1=Math.min(Math.max(0,+t1||0),video.duration);
+  t2=(t2!=null)?Math.min(Math.max(t1,+t2||t1),video.duration):t1;
   
   // 1. Если редактируем существующую правку по id маркера
   if(state.marker && state.marker.id){
     const idx = state.edits.findIndex(e => e.id === state.marker.id);
     if(idx !== -1){
       state.edits[idx].c = text;
-      state.edits[idx].t = t; // обновляем и время, если оно чуть сдвинулось
+      state.edits[idx].t1 = t1;
+      state.edits[idx].t2 = t2;
       save(); renderList(); renderMarkers();
-      toast("Правка обновлена — "+fmtFull(t));
+      toast("Правка обновлена — "+fmtFull(t1)+(t2!==t1?"–"+fmtFull(t2):""));
       return true;
     }
   }
   
   // 2. Если id нет, ищем правку с таким же временем (с небольшой погрешностью)
-  const existingIdx = state.edits.findIndex(e => Math.abs(e.t - t) < 0.1);
+  const existingIdx = state.edits.findIndex(e => Math.abs(e.t1 - t1) < 0.1 && Math.abs((e.t2||e.t1) - t2) < 0.1);
   if(existingIdx !== -1){
     state.edits[existingIdx].c = text;
     save(); renderList(); renderMarkers();
-    toast("Правка обновлена — "+fmtFull(t));
+    toast("Правка обновлена — "+fmtFull(t1)+(t2!==t1?"–"+fmtFull(t2):""));
     return true;
   }
 
   // 3. Если не найдено, создаем новую
-  state.edits.push({t,c:text,id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)});
+  state.edits.push({t1,t2,c:text,id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)});
   save();renderList();renderMarkers();
-  toast("Правка добавлена — "+fmtFull(t));
+  toast("Правка добавлена — "+fmtFull(t1)+(t2!==t1?"–"+fmtFull(t2):""));
   return true;
 }
+
 function deleteEdit(id){
   state.edits=state.edits.filter(e=>e.id!==id);
   if(state.activeId===id)setActive(null);
@@ -387,6 +458,7 @@ function deleteEdit(id){
   save();renderList();renderMarkers();
   toast("Правка удалена");
 }
+
 function renderList(){
   edCount.textContent=state.edits.length;
   editsList.textContent="";
@@ -402,7 +474,9 @@ function renderList(){
     const li=document.createElement("li");
     li.className="ed"+(e.id===state.activeId?" active":"");
     li.dataset.id=e.id;
-    const tc=document.createElement("span");tc.className="ed-tc";tc.textContent=fmtFull(e.t);
+    const tc=document.createElement("span");
+    tc.className="ed-tc";
+    tc.textContent=fmtFull(e.t1)+(e.t2&&e.t2!==e.t1?"–"+fmtFull(e.t2):"");
     const body=document.createElement("div");body.className="ed-body";
     const p=document.createElement("div");p.className="ed-text";p.textContent=e.c;
     const meta=document.createElement("div");meta.className="ed-meta";
@@ -411,43 +485,58 @@ function renderList(){
     x.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg>';
     mk.addEventListener("click",ev=>{
       ev.stopPropagation();
-      setMarker(e.t, e.id);
-      compText.value = e.c; // подгружаем существующий текст для редактирования
+      setMarker(e.t1, e.t2, e.id);
+      compText.value = e.c;
       compText.focus();
-      refreshAddBtn(); // активируем кнопку добавления/обновления
+      refreshAddBtn();
     });
     x.addEventListener("click",ev=>{ev.stopPropagation();deleteEdit(e.id)});
     meta.append(mk,x);
     body.append(p,meta);
     li.append(tc,body);
-    li.addEventListener("click",()=>seekTo(e.t,true));
+    li.addEventListener("click",()=>seekTo(e.t1,true));
     frag.appendChild(li);
   }
   editsList.appendChild(frag);
 }
+
 function renderMarkers(){
-  tl.querySelectorAll(".tl-marker").forEach(n=>n.remove());
+  tl.querySelectorAll(".tl-marker,.tl-marker-range").forEach(n=>n.remove());
   if(!(state.videoOpen&&video.duration))return;
   const d=video.duration,frag=document.createDocumentFragment();
   for(const e of state.edits){
-    const m=document.createElement("div");
-    m.className="tl-marker";
-    m.style.left=(e.t/d*100)+"%";
-    m.title=fmtFull(e.t)+" — "+e.c;
-    frag.appendChild(m);
+    if(e.t2 && e.t2!==e.t1){
+      // Диапазон - показываем как полосу
+      const range=document.createElement("div");
+      range.className="tl-marker-range";
+      range.style.left=(e.t1/d*100)+"%";
+      range.style.width=((e.t2-e.t1)/d*100)+"%";
+      range.title=fmtFull(e.t1)+"–"+fmtFull(e.t2)+" — "+e.c;
+      frag.appendChild(range);
+    }else{
+      // Точечная метка
+      const m=document.createElement("div");
+      m.className="tl-marker";
+      m.style.left=(e.t1/d*100)+"%";
+      m.title=fmtFull(e.t1)+" — "+e.c;
+      frag.appendChild(m);
+    }
   }
   tl.appendChild(frag);
 }
+
 function setActive(id){
   state.activeId=id;
   editsList.querySelectorAll(".ed").forEach(n=>n.classList.toggle("active",n.dataset.id===id));
 }
 
 /* ── marker / composer ───────────────── */
-function setMarker(t, id){
-  if(t==null){
+function setMarker(t1, t2, id){
+  if(t1==null){
     state.marker=null;
     tlCand.classList.remove("show");
+    $("#tlCand2").classList.remove("show");
+    $(".tl-range").style.display="none";
     compTc.classList.add("none");
     compTc.textContent="— без метки —";
     if(state.videoOpen&&video.duration){
@@ -459,25 +548,44 @@ function setMarker(t, id){
     }
     return;
   }
-  state.marker={t, id:id||null};
-  if(video.duration)tlCand.style.left=(t/video.duration*100)+"%";
+  state.marker={t1, t2:t2||null, id:id||null};
+  if(video.duration){
+    tlCand.style.left=(t1/video.duration*100)+"%";
+    if(t2!=null){
+      $("#tlCand2").style.left=(t2/video.duration*100)+"%";
+      $("#tlCand2").classList.add("show");
+      $(".tl-range").style.display="block";
+      $(".tl-range").style.left=(t1/video.duration*100)+"%";
+      $(".tl-range").style.width=((t2-t1)/video.duration*100)+"%";
+    }else{
+      $("#tlCand2").classList.remove("show");
+      $(".tl-range").style.display="none";
+    }
+  }
   tlCand.classList.add("show");
   compTc.classList.remove("none");
-  compTc.textContent=fmtFull(t);
+  compTc.textContent=fmtFull(t1)+(t2!=null?"–"+fmtFull(t2):"");
   btnAdd.disabled=!compText.value.trim();
-  compHint.textContent = id ? "обновит существующую правку" : "нажмите «Добавить комментарий» или Enter";
+  compHint.textContent = id ? "обновит существующую правку" : (t2!=null?"нажмите «Добавить комментарий»":"нажмите «Конец фрагмента» или продолжите");
 }
+
 function refreshAddBtn(){
   if(!(state.videoOpen&&video.duration)){btnAdd.disabled=true;return}
+  if(!state.marker && document.activeElement===compText){
+    setMarker(video.currentTime||0);
+  }
   btnAdd.disabled=!compText.value.trim();
 }
+
 function openComposer(){
   if(!state.videoOpen){toast("Сначала загрузите видео",1);return}
+  if(!video.paused) video.pause();
   setMarker(video.currentTime||0);
   compText.value="";
   compText.focus();
   comp.scrollIntoView({block:"nearest",behavior:"smooth"});
 }
+
 function autoMarker(){
   if(!state.videoOpen)return;
   if(!state.marker)setMarker(video.currentTime||0);
@@ -491,6 +599,7 @@ function updateHead(){
   tlHead.style.left=p+"%";
   timeLabel.innerHTML="<b>"+fmt(video.currentTime)+"</b> / "+fmt(video.duration);
 }
+
 function seekTo(t,activate){
   if(!state.videoOpen)return;
   t=Math.min(Math.max(0,t),video.duration||t);
@@ -498,16 +607,33 @@ function seekTo(t,activate){
   updateHead();
   if(activate){
     let best=null,bd=1e9;
-    for(const e of state.edits){const d=Math.abs(e.t-t);if(d<bd){bd=d;best=e}}
+    for(const e of state.edits){
+      const d1=Math.abs(e.t1-t);
+      const d2=e.t2?Math.abs(e.t2-t):d1;
+      const d=Math.min(d1,d2);
+      if(d<bd){bd=d;best=e}
+    }
     if(best&&bd<1.51)setActive(best.id);
   }else setActive(null);
 }
+
 function togglePlay(){
   if(!state.videoOpen)return;
   if(video.paused)video.play().catch(()=>{});else video.pause();
 }
-video.addEventListener("play",()=>{icPlay.hidden=true;icPause.hidden=false;$("#btnPlay").setAttribute("aria-label","Пауза")});
-video.addEventListener("pause",()=>{icPlay.hidden=false;icPause.hidden=true;$("#btnPlay").setAttribute("aria-label","Пуск")});
+
+video.addEventListener("play",()=>{
+  icPlay.classList.remove("active");
+  icPause.classList.add("active");
+  $("#btnPlay").setAttribute("aria-label","Пауза");
+  flashIndicator(true);
+});
+video.addEventListener("pause",()=>{
+  icPlay.classList.add("active");
+  icPause.classList.remove("active");
+  $("#btnPlay").setAttribute("aria-label","Пуск");
+  flashIndicator(false);
+});
 video.addEventListener("timeupdate",updateHead);
 video.addEventListener("loadedmetadata",()=>{state.videoOpen=true;updateHead();renderMarkers()});
 video.addEventListener("durationchange",updateHead);
@@ -515,13 +641,13 @@ video.addEventListener("error",()=>{
   if(!video.currentSrc)return;
   showError("Не удалось воспроизвести видео. Проверьте ссылку: нужен прямой адрес на файл (mp4 / webm), а не страница. Если источник закрыт для внешнего доступа, откройте видео с файла.");
 });
+video.addEventListener("click", togglePlay);
 
 /* ── source ──────────────────────────── */
 function setSrc(url,label){
   hideError();
   if(label)urlIn.value=url.length>140?url.slice(0,137)+"…":url;
   video.src=url;
-  state.edits.length=0;
   setMarker(null);
   setActive(null);
   renderList();
@@ -530,19 +656,33 @@ function setSrc(url,label){
   video.hidden=false;
   video.load();
 }
+
 video.addEventListener("loadedmetadata",refreshAddBtn);
 video.addEventListener("pause",refreshAddBtn);
 compText.addEventListener("input",()=>{
-  if(state.marker)return;
-  if(state.videoOpen&&video.duration)btnAdd.disabled=!compText.value.trim();
+  if(state.videoOpen&&video.duration){
+    if(!state.marker) setMarker(video.currentTime||0);
+    btnAdd.disabled=!compText.value.trim();
+  }
 });
+
+compText.addEventListener("focus", () => {
+  if(state.videoOpen && !video.paused) video.pause();
+  if(state.videoOpen && !state.marker) {
+    setMarker(video.currentTime||0);
+    refreshAddBtn(); // добавляем обновление кнопки
+  }
+});
+
 $("#btnLoad").addEventListener("click",()=>{
   const u=urlIn.value.trim();
   if(!u){urlIn.focus();toast("Вставьте ссылку на видео",1);return}
   try{new URL(u)}catch(e){toast("Похоже, это не ссылка: нужен http:// или https://",1);return}
   setSrc(u);
 });
+
 urlIn.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#btnLoad").click()}});
+
 fileIn.addEventListener("change",()=>{
   const f=fileIn.files[0];
   if(!f)return;
@@ -554,11 +694,13 @@ fileIn.addEventListener("change",()=>{
 /* ── timeline pointer ────────────────── */
 let dragging=false;
 const pctFromEvent=e=>{const r=tl.getBoundingClientRect();return Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))};
+
 function ghostAt(p){
   tlGhost.textContent=fmtFull(p*(video.duration||0));
   tlGhost.style.left=(p*100)+"%";
   tlGhost.classList.add("show");
 }
+
 tl.addEventListener("pointerdown",e=>{
   if(!state.videoOpen)return;
   dragging=true;
@@ -567,15 +709,18 @@ tl.addEventListener("pointerdown",e=>{
   ghostAt(p);
   seekTo(p*video.duration,true);
 });
+
 tl.addEventListener("pointermove",e=>{
   if(!state.videoOpen)return;
   const p=pctFromEvent(e);
   if(dragging){ghostAt(p);seekTo(p*video.duration,false)}
   else ghostAt(p);
 });
+
 tl.addEventListener("pointerup",e=>{dragging=false;try{tl.releasePointerCapture(e.pointerId)}catch(err){}});
 tl.addEventListener("pointercancel",()=>{dragging=false});
 tl.addEventListener("pointerleave",()=>{if(!dragging)tlGhost.classList.remove("show")});
+
 tl.addEventListener("dblclick",e=>{
   if(!state.videoOpen)return;
   e.preventDefault();
@@ -588,12 +733,14 @@ tl.addEventListener("dblclick",e=>{
 $("#btnPlay").addEventListener("click",togglePlay);
 $("#btnBack").addEventListener("click",()=>seekTo((video.currentTime||0)-5,false));
 $("#btnFwd").addEventListener("click",()=>seekTo((video.currentTime||0)+5,false));
+
 $("#btnRate").addEventListener("click",()=>{
   state.rateIdx=(state.rateIdx+1)%RATE_STEPS.length;
   const r=RATE_STEPS[state.rateIdx];
   video.playbackRate=r;
   $("#btnRate").textContent=r+"×";
 });
+
 function setVol(v){
   v=Math.min(1,Math.max(0,+v||0));
   video.volume=v;
@@ -603,6 +750,7 @@ function setVol(v){
   b.textContent=Math.round(v*100)+"%";
   try{localStorage.setItem("video-notes:vol",String(v))}catch(e){}
 }
+
 $("#btnVol").addEventListener("click",()=>{
   if(!video.muted&&video.volume>0)setVol(0);
   else{
@@ -610,24 +758,45 @@ $("#btnVol").addEventListener("click",()=>{
     setVol(isFinite(prev)&&prev>0?prev:1);
   }
 });
+
 $("#btnFull").addEventListener("click",()=>{
   if(document.fullscreenElement)document.exitFullscreen();
   else vwrap.requestFullscreen().catch(()=>toast("Полный экран недоступен",1));
 });
+
 $("#btnHideErr").addEventListener("click",hideError);
 
 /* ── composer ────────────────────────── */
-btnClearMark.addEventListener("click",()=>{setMarker(null);compText.value="";refreshAddBtn();compText.focus()});
+btnClearMark.addEventListener("click",()=>{
+  setMarker(null);
+  compText.value="";
+  compText.blur(); // убираем фокус, чтобы не срабатывала автоустановка метки
+  refreshAddBtn();
+});
+
+$("#btnSetEnd").addEventListener("click",()=>{
+  if(!state.videoOpen||!state.marker){toast("Сначала отметьте начало фрагмента",1);return}
+  setMarker(state.marker.t1, video.currentTime, state.marker.id);
+  compText.focus();
+});
+
 comp.addEventListener("submit",e=>{
   e.preventDefault();
-  autoMarker();
-  if(!state.marker){toast("Загрузите видео и укажите момент",1);return}
-  const t=state.marker.t,txt=compText.value;
-  if(addEdit(t,txt)){
+  if(!state.marker){
+    if(state.videoOpen&&video.duration){
+      setMarker(video.currentTime||0);
+    }else{
+      toast("Загрузите видео и укажите момент",1);
+      return;
+    }
+  }
+  const t1=state.marker.t1, t2=state.marker.t2, txt=compText.value;
+  if(addEdit(t1,t2,txt)){
     compText.value="";
     setMarker(null);
   }
 });
+
 compText.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();comp.requestSubmit()}
   if(e.key==="Escape"){setMarker(null);compText.value="";refreshAddBtn()}
@@ -639,7 +808,9 @@ importInput.type="file";
 importInput.accept=".txt,text/plain";
 importInput.style.display="none";
 document.body.appendChild(importInput);
+
 $("#btnImport").addEventListener("click",()=>importInput.click());
+
 importInput.addEventListener("change",()=>{
   const f=importInput.files[0];
   importInput.value="";
@@ -647,17 +818,21 @@ importInput.addEventListener("change",()=>{
   const rd=new FileReader();
   rd.onload=()=>{
     const items=parseImport(rd.result);
-    if(!items.length){toast("В файле не найдено ни одной правки. Формат: ЧЧ:ММ:СС — текст",1);return}
-    state.edits=items.map(e=>({t:e.t,c:e.c,id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}));
+    if(!items.length){toast("В файле не найдено ни одной правки. Формат: ЧЧ:ММ:СС — текст или ЧЧ:ММ:СС–ЧЧ:ММ:СС — текст",1);return}
+    state.edits=items.map(e=>({t1:e.t1,t2:e.t2,c:e.c,id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}));
     save();renderList();renderMarkers();
     toast("Импортировано правок: "+items.length);
   };
   rd.onerror=()=>toast("Не удалось прочитать файл",1);
   rd.readAsText(f,"utf-8");
 });
+
 $("#btnExport").addEventListener("click",()=>{
   if(!state.edits.length){toast("Пока нет ни одной правки",1);return}
-  const lines=sortedEdits().map(e=>fmtFull(e.t)+" — "+e.c);
+  const lines=sortedEdits().map(e=>{
+    const timeStr = e.t2 && e.t2!==e.t1 ? fmtFull(e.t1)+"–"+fmtFull(e.t2) : fmtFull(e.t1);
+    return timeStr+" — "+e.c;
+  });
   const blob=new Blob([lines.join("\n")+"\n"],{type:"text/plain;charset=utf-8"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
@@ -672,12 +847,15 @@ $("#btnExport").addEventListener("click",()=>{
 /* ── clear all (modal) ───────────────── */
 const mShow=()=>{mCount.textContent=state.edits.length;mback.hidden=false;$("#mCancel").focus()};
 const mHide=()=>{mback.hidden=true};
+
 $("#btnClear").addEventListener("click",()=>{
   if(!state.edits.length){toast("Список уже пуст",1);return}
   mShow();
 });
+
 $("#mCancel").addEventListener("click",mHide);
 mback.addEventListener("click",e=>{if(e.target===mback)mHide()});
+
 $("#mOk").addEventListener("click",()=>{
   state.edits.length=0;
   setMarker(null);
