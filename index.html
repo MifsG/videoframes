@@ -70,12 +70,11 @@ button{cursor:pointer;background:none;border:none;padding:0}
 /* ── Video stage ────────────────────── */
 .stage{overflow:hidden}
 .stage video{display:block;width:100%;max-height:45vh;background:#000;aspect-ratio:16/9;object-fit:contain;cursor:pointer}
+.stage.point-mode video{cursor:crosshair}
 .vwrap{position:relative}
 .vwrap::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--line);pointer-events:none}
-.empty-stage{position:relative}
-.empty-stage .placeholder{position:absolute;inset:0;display:grid;place-items:center;background:#0a0a0c}
-.ph-box{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--faint);text-align:center;padding:20px}
-.ph-box p{margin:0;font-size:13.5px;max-width:340px;line-height:1.6}
+.vwrap:fullscreen{background:#000;display:grid;place-items:center}
+.vwrap:fullscreen video{max-height:100vh;height:100vh}
 .kbd{font:10.5px var(--mono);background:var(--surface2);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:var(--muted)}
 .errbar{display:none;align-items:center;gap:10px;padding:9px 14px;background:rgba(226,114,91,.1);border-top:1px solid rgba(226,114,91,.35);color:#f0a28f;font-size:12.5px}
 .errbar.show{display:flex}
@@ -85,13 +84,32 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .play-ind svg{width:32px;height:32px;fill:#fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
 .play-ind svg[hidden]{display:none}
 
+/* ── Точки на кадре ─────────────────── */
+.pt-layer{position:absolute;inset:0;pointer-events:none;z-index:4}
+.pt{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
+  background:rgba(255,255,255,.92);border:2px solid #0c0c0e;box-shadow:0 0 0 2px rgba(255,255,255,.22),0 2px 8px rgba(0,0,0,.6)}
+.pt.pending{background:var(--accent);border-color:#161207;pointer-events:auto;cursor:grab;animation:ptPulse 1.8s ease-out infinite}
+.pt.pending:active{cursor:grabbing}
+@keyframes ptPulse{
+  0%{box-shadow:0 0 0 3px rgba(217,160,102,.45),0 2px 10px rgba(0,0,0,.6)}
+  70%{box-shadow:0 0 0 15px rgba(217,160,102,0),0 2px 10px rgba(0,0,0,.6)}
+  100%{box-shadow:0 0 0 3px rgba(217,160,102,0),0 2px 10px rgba(0,0,0,.6)}
+}
+.pt-tip{position:absolute;left:50%;top:-9px;transform:translate(-50%,-100%);background:var(--surface3);
+  border:1px solid var(--line2);color:var(--text);font:11px/1 var(--mono);padding:4px 6px;border-radius:5px;white-space:nowrap}
+.pt-hint{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(0,0,0,.68);
+  border:1px solid var(--line2);color:var(--text);font-size:12px;padding:6px 13px;border-radius:20px;z-index:6;
+  display:none;pointer-events:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.stage.point-mode .pt-hint{display:block}
+
 /* ── Timeline ───────────────────────── */
 .tl{position:relative;height:0px;cursor:pointer;touch-action:none;user-select:none;outline-offset:4px}
 .tl-rail{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:5px;background:var(--surface3);border-radius:3px}
 .tl-fill{position:absolute;left:0;top:50%;transform:translateY(-50%);height:5px;width:0;background:var(--accent);border-radius:3px}
 .tl-head{position:absolute;top:50%;left:0;width:13px;height:13px;background:var(--accent);border:2px solid var(--bg);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 6px rgba(0,0,0,.5)}
 .tl-marker{position:absolute;top:50%;width:12px;height:12px;background:#fff;border:2px solid #0c0c0e;border-radius:50%;transform:translate(-50%,-50%);z-index:2;pointer-events:none}
-.tl-marker-range{position:absolute;top:50%;transform:translateY(-50%);height:5px;background:rgba(255,255,255,.6);border:2px solid #0c0c0e;border-radius:2px;pointer-events:none;z-index:1}
+.tl-marker.has-pt{background:var(--accent)}
+.tl-marker-range{position:absolute;top:50%;transform:translateY(-50%);height:5px;background:rgba(255,255,255,.6);border-radius:3px;pointer-events:none;z-index:1}
 .tl-cand{position:absolute;top:50%;width:13px;height:13px;border:2px solid var(--accent);background:rgba(217,160,102,.25);border-radius:50%;transform:translate(-50%,-50%);display:none;z-index:3;pointer-events:none;box-shadow:0 0 0 4px rgba(217,160,102,.15)}
 .tl-cand.show{display:block}
 .tl-range{position:absolute;top:50%;transform:translateY(-50%);height:5px;background:rgba(217,160,102,.3);border-radius:3px;display:none;pointer-events:none;z-index:1}
@@ -116,6 +134,13 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .iconbtn .badge[hidden]{display:none}
 .rate{background:var(--surface2);border:1px solid var(--line);border-radius:var(--r-sm);height:34px;padding:0 10px;font:500 12px var(--mono);color:var(--muted);flex:none}
 .rate:hover{background:var(--surface3);color:var(--text)}
+.vol-wrap{position:relative;display:flex;align-items:center;gap:4px;flex:none}
+.vol-slider{width:70px;height:26px;flex:none}
+.vol-slider input[type="range"]{width:100%;height:4px;border-radius:2px;background:var(--surface3);outline:none;-webkit-appearance:none;appearance:none;cursor:pointer}
+.vol-slider input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);cursor:pointer}
+.vol-slider input[type="range"]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.vol-slider input[type="range"]::-webkit-slider-runnable-track{height:12px;border-radius:2px}
+.vol-slider input[type="range"]::-moz-range-track{height:4px;border-radius:2px;background:var(--surface3)}
 
 /* ── Source bar ─────────────────────── */
 .srcbar{display:flex;gap:8px;padding:12px;flex-wrap:wrap;border-top:1px solid var(--line)}
@@ -131,17 +156,22 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .edits .ed:first-child{border-top:none}
 .ed:hover{background:var(--surface2)}
 .ed.active{background:rgba(217,160,102,.09);box-shadow:inset 2px 0 0 var(--accent)}
-.ed-tc{flex:none;font:500 12px/1.7 var(--mono);color:var(--accent);background:rgba(217, 160, 102, 0.1);padding:2px 8px;border-radius:6px;height:fit-content;white-space:nowrap}
+.ed-tc{flex:none;font:500 12px/1.7 var(--mono);color:var(--accent);background:rgba(217,160,102,.1);padding:2px 8px;border-radius:6px;height:fit-content;white-space:nowrap}
 .ed-body{flex:1;min-width:0}
 .ed-text{font-size:13px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
-.ed-meta{margin-top:5px;display:flex;align-items:center;gap:8px}
-.ed-mark{font-size:11.5px;font-family:var(--mono);color:var(--faint);padding:2px 6px;border-radius:4px}
+.ed-meta{margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ed-mark{font-size:11.5px;font-family:var(--mono);color:var(--faint);padding:2px 6px;border-radius:4px;}
 .ed-mark:hover{background:var(--surface3);color:var(--accent)}
+.ed-pt{font:11.5px var(--mono);color:var(--accent);background:rgba(217,160,102,.1);padding:2px 6px;border-radius:4px;white-space:nowrap}
 .ed-x{width:26px;height:26px;flex:none;border-radius:6px;display:grid;place-items:center;color:var(--faint);opacity:0;transition:opacity .12s,background .12s}
 .ed:hover .ed-x,.ed.active .ed-x{opacity:1}
 .ed-x:hover{background:rgba(226,114,91,.15);color:var(--danger)}
 .list-empty{padding:26px 14px;text-align:center;color:var(--faint);font-size:12.5px;line-height:1.6}
 .list-empty svg{display:block;margin:0 auto 10px;opacity:.6}
+.ed-tc-wrap{display:flex;flex-direction:column;align-items:left;gap:4px;flex:none;height:fit-content}
+.ed-pt-ico{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+  background:rgba(217,160,102,.12);color:var(--accent)}
+.ed-pt-ico svg{display:block}
 
 /* ── Composer ───────────────────────── */
 .comp{padding:12px}
@@ -150,6 +180,10 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .comp-tc.none{background:var(--surface2);color:var(--faint);border:1px dashed var(--line2)}
 .comp-tc:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(217,160,102,.15)}
 .comp-tc.invalid{background:rgba(226,114,91,.15);color:var(--danger);border-color:var(--danger)}
+.pt-chip{display:inline-flex;align-items:center;gap:6px;font:600 11.5px var(--mono);color:var(--accent);
+  background:rgba(217,160,102,.12);border:1px solid rgba(217,160,102,.4);border-radius:6px;padding:3px 8px}
+.pt-chip:hover{background:rgba(226,114,91,.14);border-color:rgba(226,114,91,.45);color:var(--danger)}
+.pt-chip[hidden]{display:none}
 .comp-head .lbl{font-size:11.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
 .comp textarea{width:100%;min-height:74px;resize:vertical;padding:9px 11px;border-radius:var(--r-sm);background:var(--bg);border:1px solid var(--line);font-size:13px;line-height:1.5}
 .comp textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(217,160,102,.15)}
@@ -198,9 +232,11 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
   <div class="grid">
     <div class="left-col">
 
-    <section class="panel stage" aria-label="Плеер">
+    <section class="panel stage" id="stage" aria-label="Плеер">
       <div class="vwrap" id="vwrap">
         <video id="video" preload="auto" playsinline hidden oncontextmenu="event.preventDefault()"></video>
+        <div class="pt-layer" id="ptLayer"></div>
+        <div class="pt-hint" id="ptHint">Кликните по кадру, чтобы поставить точку · Esc — отмена</div>
         <div class="play-ind" id="playInd" aria-hidden="true">
           <svg id="indPlay" viewBox="0 0 24 24" hidden><path d="M8 5.5v13l11-6.5z"/></svg>
           <svg id="indPause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg>
@@ -221,7 +257,7 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
         <div class="tl-head" id="tlHead"></div>
       </div>
       <div class="controls">
-        <button class="cbtn" id="btnPlay" aria-label="Пауза">
+        <button class="cbtn" id="btnPlay" aria-label="Пуск">
           <svg id="icPlay" class="active" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
           <svg id="icPause" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg>
         </button>
@@ -233,10 +269,15 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
         </button>
         <span class="time" id="timeLabel"><b>0:00</b> / 0:00</span>
         <span class="spacer"></span>
-        <button class="iconbtn" id="btnVol" title="Звук / выключить (M)" aria-label="Звук">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6.5 9H3v6h3.5L11 19zM15.5 8.5a5 5 0 0 1 0 7M18.5 6a9 9 0 0 1 0 12"/></svg>
-          <span class="badge" id="volBadge" hidden>0%</span>
-        </button>
+        <div class="vol-wrap">
+          <div class="vol-slider">
+            <input type="range" id="volSlider" min="0" max="100" value="100" step="1" title="Громкость">
+          </div>
+          <button class="iconbtn" id="btnVol" title="Звук / выключить (M)" aria-label="Звук">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6.5 9H3v6h3.5L11 19zM15.5 8.5a5 5 0 0 1 0 7M18.5 6a9 9 0 0 1 0 12"/></svg>
+            <span class="badge" id="volBadge" hidden>0%</span>
+          </button>
+        </div>
         <button class="rate" id="btnRate" title="Скорость воспроизведения">1×</button>
         <button class="iconbtn" id="btnFull" title="Полный экран (F)" aria-label="Полный экран">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M8 21H4a1 1 0 0 1-1-1v-4M16 21h4a1 1 0 0 0 1-1v-4"/></svg>
@@ -262,24 +303,35 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
       </div>
       <form class="comp" id="comp">
         <div class="comp-head">
-          <input type="text" class="comp-tc none" id="compTc" placeholder="00:00:00" autocomplete="off" spellcheck="false">
-          <span class="lbl">момент берётся автоматически с текущего положения</span>
-        </div>
-        <textarea id="compText" placeholder="Что поправить в этом месте? Например: срезать паузу, усилить звук, заменить кадр…" rows="3" maxlength="2000" autocomplete="off"></textarea>
-        <div class="comp-row">
-          <span class="tiny"><span class="kbd">Enter</span> добавить · <span class="kbd">Esc</span> отменить</span>
-          <span class="spacer"></span>
-          <button type="button" class="btn sm toggle on" id="btnAutoPause" title="Автопауза видео при начале ввода правки">
-            <span class="dot"></span>
-            Автопауза
+          <input type="text" class="comp-tc none" id="compTc" placeholder="00:00:00" autocomplete="off" spellcheck="false" title="Время метки. Можно диапазон: 00:15:01–00:15:29">
+          <button type="button" class="pt-chip" id="ptChip" hidden title="Убрать точку с кадра">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="9"/></svg>
+            <span id="ptChipVal">x 0% · y 0%</span>
+            <span aria-hidden="true">×</span>
           </button>
-          <button type="button" class="btn sm" id="btnSetEnd" title="Отметить конец фрагмента">Конец фрагмента</button>
-          <button type="button" class="btn sm" id="btnClearMark">Отмена</button>
-          <button type="submit" class="btn sm primary" id="btnAdd" disabled>
-            <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            Добавить
-          </button>
+          <span class="lbl">время — с текущей позиции</span>
         </div>
+        <textarea id="compText" placeholder="Что поправить в этом месте? Например: здесь добавить текст, срезать паузу, усилить звук…" rows="3" maxlength="2000" autocomplete="off"></textarea>
+          <div class="comp-row">
+            <button type="button" class="btn sm toggle on" id="btnAutoPause" title="Автопауза видео при начале ввода правки">
+              <span class="dot"></span>
+              Автопауза
+            </button>
+            <span class="spacer"></span>
+            <button type="button" class="btn sm toggle" id="btnPoint" title="Поставить точку на кадре (P)">
+              <span class="dot"></span>
+              Точка на кадре
+            </button>
+            <button type="button" class="btn sm" id="btnSetEnd" title="Отметить конец фрагмента">Конец фрагмента</button>
+            <button type="button" class="btn sm" id="btnClearMark">Отмена</button>
+            <button type="submit" class="btn sm primary" id="btnAdd" disabled>
+              <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Добавить
+            </button>
+          </div>
+          <div class="comp-row">
+            <span class="tiny"><span class="kbd">Enter</span> добавить · <span class="kbd">Esc</span> отменить · <span class="kbd">P</span> точка</span>
+          </div>
       </form>
     </section>
 
@@ -293,7 +345,7 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
         <button class="btn sm danger" id="btnClear" title="Удалить все правки">Очистить</button>
       </div>
       <ol class="edits" id="editsList"></ol>
-      <p class="hint">Клик по строке — перемотка к правке. Формат файла: <span style="font-family:var(--mono)">ЧЧ:ММ:СС — текст</span> или <span style="font-family:var(--mono)">ЧЧ:ММ:СС–ЧЧ:ММ:СС — текст</span>. Отметки хранятся в этом браузере.</p>
+      <p class="hint">Клик по строке — перемотка к правке (точка появится на кадре).</p>
     </section>
   </div>
 
@@ -317,7 +369,7 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
 (()=>{
 "use strict";
 const $=s=>document.querySelector(s);
-const video=$("#video"),vwrap=$("#vwrap"),tl=$("#tl"),tlFill=$("#tlFill"),tlHead=$("#tlHead"),
+const video=$("#video"),vwrap=$("#vwrap"),stage=$("#stage"),tl=$("#tl"),tlFill=$("#tlFill"),tlHead=$("#tlHead"),
       tlCand=$("#tlCand"),tlGhost=$("#tlGhost"),timeLabel=$("#timeLabel"),
       comp=$("#comp"),compText=$("#compText"),compTc=$("#compTc"),btnAdd=$("#btnAdd"),
       compHint=$("#compHint"),btnClearMark=$("#btnClearMark"),
@@ -326,10 +378,13 @@ const video=$("#video"),vwrap=$("#vwrap"),tl=$("#tl"),tlFill=$("#tlFill"),tlHead
       mback=$("#mback"),mCount=$("#mCount");
 const icPlay=$("#icPlay"),icPause=$("#icPause");
 const playInd=$("#playInd"),indPlay=$("#indPlay"),indPause=$("#indPause");
-const btnAutoPause=$("#btnAutoPause");
+const btnAutoPause=$("#btnAutoPause"),btnPoint=$("#btnPoint");
+const ptLayer=$("#ptLayer"),ptChip=$("#ptChip"),ptChipVal=$("#ptChipVal");
 const STORE="video-notes:v1";
-const RATE_STEPS=[.5,1,1.25,1.5,2,3];
-const state={edits:[],marker:null,activeId:null,videoOpen:false,rateIdx:1,autoPause:true};
+const RATE_STEPS=[.5,1,1.25,1.5,2];
+const state={edits:[],marker:null,activeId:null,videoOpen:false,rateIdx:1,autoPause:true,
+             point:null,pointMode:false};
+let ptDrag=false;
 
 let indTimer;
 function flashIndicator(isPlay){
@@ -342,82 +397,56 @@ function flashIndicator(isPlay){
 
 /* ── helpers ─────────────────────────── */
 const pad=n=>String(n).padStart(2,"0");
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const fmt=t=>{t=Math.max(0,t|0);const h=t/3600|0,m=(t/60|0)%60,s=t%60;return(h?pad(h)+":":"")+pad(m)+":"+pad(s)};
 const fmtFull=t=>{t=Math.max(0,t|0);return pad(t/3600|0)+":"+pad((t/60|0)%60)+":"+pad(t%60)};
+const pct=v=>(v*100).toFixed(1).replace(/\.0$/,"");
+const ptLabel=p=>"x "+pct(p.x)+"% · y "+pct(p.y)+"%";
+const timeStr=e=>fmtFull(e.t1)+(e.t2!=null&&e.t2!==e.t1?"–"+fmtFull(e.t2):"");
 
 function parseTime(str){
-  const parts=str.split(":");
-  let h=0,m=0,s=0,ms=0;
-  if(parts.length===3){
-    h=+parts[0]; m=+parts[1];
-    const secParts=parts[2].split(/[.,]/);
-    s=+secParts[0];
-    ms=secParts[1]?+("0."+secParts[1]):0;
-  }else if(parts.length===2){
-    m=+parts[0];
-    const secParts=parts[1].split(/[.,]/);
-    s=+secParts[0];
-    ms=secParts[1]?+("0."+secParts[1]):0;
-  }
-  return h*3600+m*60+s+ms;
-}
-
-function parseTimeStr(str){
-  str=str.trim();
-  const parts=str.split(":");
-  if(parts.length<2||parts.length>3) throw new Error("Invalid format");
-  
+  const parts=String(str).trim().split(":");
   let h=0,m=0,s=0;
-  if(parts.length===3){
-    h=parseInt(parts[0],10);
-    m=parseInt(parts[1],10);
-    s=parseFloat(parts[2]);
-  }else{
-    m=parseInt(parts[0],10);
-    s=parseFloat(parts[1]);
-  }
-  
-  if(!isFinite(h)||!isFinite(m)||!isFinite(s)||h<0||m<0||m>59||s<0||s>=60){
-    throw new Error("Invalid time");
-  }
-  
+  if(parts.length===3){h=+parts[0];m=+parts[1];s=+parts[2].replace(",",".")}
+  else if(parts.length===2){m=+parts[0];s=+parts[1].replace(",",".")}
+  else return NaN;
   return h*3600+m*60+s;
 }
+function parseTimeStr(str){
+  const parts=String(str).trim().split(":");
+  if(parts.length<2||parts.length>3)throw new Error("fmt");
+  let h=0,m=0,s=0;
+  if(parts.length===3){h=parseInt(parts[0],10);m=parseInt(parts[1],10);s=parseFloat(parts[2].replace(",","."))}
+  else{m=parseInt(parts[0],10);s=parseFloat(parts[1].replace(",","."))}
+  if(!isFinite(h)||!isFinite(m)||!isFinite(s)||h<0||m<0||m>59||s<0||s>=60)throw new Error("val");
+  return h*3600+m*60+s;
+}
+
+/* строка файла: время [– время] [[x:… y:…]] — текст */
+const T="(\\d{1,3}:[0-5]?\\d(?::[0-5]?\\d)?(?:[.,]\\d+)?)";
+const LINE=new RegExp(
+  "^"+T+
+  "(?:\\s*[–—-]\\s*"+T+")?"+
+  "(?:\\s*\\[\\s*x\\s*:\\s*(\\d+(?:[.,]\\d+)?)%?\\s*[,;\\s]\\s*y\\s*:\\s*(\\d+(?:[.,]\\d+)?)%?\\s*\\])?"+
+  "(?:\\s*[-–—:]+\\s*|\\s+)(.+)$","i");
 
 function parseImport(text){
   const res=[];
   for(const raw of String(text).split(/\r?\n/)){
     const line=raw.trim();
     if(!line)continue;
-    
-    let m=line.match(/^(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s*[–—-]\s*(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s*[-–—:]+\s*(.+)$/);
-    if(m){
-      const t1=parseTime(m[1]), t2=parseTime(m[2]);
-      let cap=m[3].replace(/^["«'`]+|["»'`]+$/g,"").trim();
-      if(cap&&isFinite(t1)&&isFinite(t2)&&t1>=0&&t2>=t1){
-        res.push({t1,t2,c:cap});
-        continue;
-      }
+    const m=line.match(LINE);
+    if(!m)continue;
+    let t1=parseTime(m[1]),t2=m[2]?parseTime(m[2]):null;
+    const cap=m[5].replace(/^["«'`]+|["»'`]+$/g,"").trim();
+    if(!cap||!isFinite(t1)||t1<0)continue;
+    if(t2!=null){if(!isFinite(t2))t2=null;else if(t2<t1){const s=t1;t1=t2;t2=s}}
+    let p=null;
+    if(m[3]&&m[4]){
+      const x=parseFloat(m[3].replace(",","."))/100,y=parseFloat(m[4].replace(",","."))/100;
+      if(isFinite(x)&&isFinite(y))p={x:clamp(x,0,1),y:clamp(y,0,1)};
     }
-    
-    m=line.match(/^(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s*[-–—:]+\s*(.+)$/);
-    if(m){
-      const t1=parseTime(m[1]);
-      let cap=m[2].replace(/^["«'`]+|["»'`]+$/g,"").trim();
-      if(cap&&isFinite(t1)&&t1>=0){
-        res.push({t1,t2:null,c:cap});
-        continue;
-      }
-    }
-    
-    m=line.match(/^(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s+(.+)$/);
-    if(m){
-      const t1=parseTime(m[1]);
-      let cap=m[2].replace(/^["«'`]+|["»'`]+$/g,"").trim();
-      if(cap&&isFinite(t1)&&t1>=0){
-        res.push({t1,t2:null,c:cap});
-      }
-    }
+    res.push({t1,t2,c:cap,p});
   }
   return res;
 }
@@ -438,55 +467,60 @@ function save(){try{localStorage.setItem(STORE,JSON.stringify(state.edits))}catc
 function load(){
   try{
     const a=JSON.parse(localStorage.getItem(STORE));
-    if(Array.isArray(a))state.edits=a.filter(e=>e&&isFinite(e.t1)&&typeof e.c==="string");
+    if(Array.isArray(a)){
+      state.edits=a.filter(e=>e&&typeof e.c==="string").map(e=>{
+        const t1=isFinite(e.t1)?e.t1:(isFinite(e.t)?e.t:NaN);
+        if(!isFinite(t1))return null;
+        const t2=isFinite(e.t2)?e.t2:null;
+        const p=(e.p&&isFinite(e.p.x)&&isFinite(e.p.y))?{x:clamp(e.p.x,0,1),y:clamp(e.p.y,0,1)}:null;
+        return {t1,t2,c:e.c,p,id:e.id||uid()};
+      }).filter(Boolean);
+    }
   }catch(e){}
   try{
     const ap=localStorage.getItem("video-notes:autoPause");
-    if(ap!==null) state.autoPause=ap==="1";
+    if(ap!==null)state.autoPause=ap==="1";
   }catch(e){}
 }
-function saveAutoPause(){
-  try{localStorage.setItem("video-notes:autoPause",state.autoPause?"1":"0")}catch(e){}
-}
+function saveAutoPause(){try{localStorage.setItem("video-notes:autoPause",state.autoPause?"1":"0")}catch(e){}}
 function updateAutoPauseUI(){
   btnAutoPause.classList.toggle("on",state.autoPause);
   btnAutoPause.title=state.autoPause?"Автопауза включена — видео останавливается при начале ввода":"Автопауза выключена — видео продолжает играть при вводе";
 }
+const uid=()=>"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 /* ── edits ───────────────────────────── */
 const sortedEdits=()=>[...state.edits].sort((a,b)=>a.t1-b.t1);
 
-function addEdit(t1, t2, text){
+function addEdit(t1,t2,text,p){
   text=String(text||"").replace(/\s+/g," ").trim().slice(0,2000);
   if(!text){toast("Введите текст правки",1);return false}
   if(!(state.videoOpen&&video.duration)){toast("Сначала загрузите видео",1);return false}
-  
-  t1=Math.min(Math.max(0,+t1||0),video.duration);
-  t2=(t2!=null)?Math.min(Math.max(t1,+t2||t1),video.duration):t1;
-  
-  if(state.marker && state.marker.id){
-    const idx = state.edits.findIndex(e => e.id === state.marker.id);
-    if(idx !== -1){
-      state.edits[idx].c = text;
-      state.edits[idx].t1 = t1;
-      state.edits[idx].t2 = t2;
-      save(); renderList(); renderMarkers();
-      toast("Правка обновлена — "+fmtFull(t1)+(t2!==t1?"–"+fmtFull(t2):""));
+
+  t1=clamp(+t1||0,0,video.duration);
+  t2=(t2!=null)?clamp(Math.max(t1,+t2||t1),0,video.duration):t1;
+  const point=p?{x:clamp(p.x,0,1),y:clamp(p.y,0,1)}:null;
+  const stamp=timeStr({t1,t2})+(point?" · "+ptLabel(point):"");
+
+  if(state.marker&&state.marker.id){
+    const i=state.edits.findIndex(e=>e.id===state.marker.id);
+    if(i!==-1){
+      Object.assign(state.edits[i],{t1,t2,c:text,p:point});
+      save();renderList();renderMarkers();renderPoints();
+      toast("Правка обновлена — "+stamp);
       return true;
     }
   }
-  
-  const existingIdx = state.edits.findIndex(e => Math.abs(e.t1 - t1) < 0.1 && Math.abs((e.t2||e.t1) - t2) < 0.1);
-  if(existingIdx !== -1){
-    state.edits[existingIdx].c = text;
-    save(); renderList(); renderMarkers();
-    toast("Правка обновлена — "+fmtFull(t1)+(t2!==t1?"–"+fmtFull(t2):""));
+  const i=state.edits.findIndex(e=>Math.abs(e.t1-t1)<0.1&&Math.abs((e.t2!=null?e.t2:e.t1)-t2)<0.1);
+  if(i!==-1){
+    Object.assign(state.edits[i],{c:text,p:point||state.edits[i].p||null});
+    save();renderList();renderMarkers();renderPoints();
+    toast("Правка обновлена — "+stamp);
     return true;
   }
-
-  state.edits.push({t1,t2,c:text,id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)});
-  save();renderList();renderMarkers();
-  toast("Правка добавлена — "+fmtFull(t1)+(t2!==t1?"–"+fmtFull(t2):""));
+  state.edits.push({t1,t2,c:text,p:point,id:uid()});
+  save();renderList();renderMarkers();renderPoints();
+  toast("Правка добавлена — "+stamp);
   return true;
 }
 
@@ -494,7 +528,7 @@ function deleteEdit(id){
   state.edits=state.edits.filter(e=>e.id!==id);
   if(state.activeId===id)setActive(null);
   if(state.marker&&state.marker.id===id)setMarker(null);
-  save();renderList();renderMarkers();
+  save();renderList();renderMarkers();renderPoints();
   toast("Правка удалена");
 }
 
@@ -513,27 +547,37 @@ function renderList(){
     const li=document.createElement("li");
     li.className="ed"+(e.id===state.activeId?" active":"");
     li.dataset.id=e.id;
-    const tc=document.createElement("span");
-    tc.className="ed-tc";
-    tc.textContent=fmtFull(e.t1)+(e.t2&&e.t2!==e.t1?"–"+fmtFull(e.t2):"");
+    const tcWrap=document.createElement("div");tcWrap.className="ed-tc-wrap";
+    const tc=document.createElement("span");tc.className="ed-tc";tc.textContent=timeStr(e);
+    tcWrap.appendChild(tc);
+    if(e.p){
+      const pt=document.createElement("span");pt.className="ed-pt-ico";pt.title="Точка на кадре";
+      pt.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="9"/></svg>';
+      tcWrap.appendChild(pt);
+    }
     const body=document.createElement("div");body.className="ed-body";
     const p=document.createElement("div");p.className="ed-text";p.textContent=e.c;
     const meta=document.createElement("div");meta.className="ed-meta";
     const mk=document.createElement("button");mk.className="ed-mark";mk.type="button";mk.textContent="изменить";
-    const x=document.createElement("button");x.className="ed-x";x.type="button";x.title="Удалить правку";
-    x.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg>';
     mk.addEventListener("click",ev=>{
       ev.stopPropagation();
-      setMarker(e.t1, e.t2, e.id);
-      compText.value = e.c;
+      setMarker(e.t1,e.t2,e.id,e.p||null);
+      compText.value=e.c;
+      seekTo(e.t1,false);
+      setActive(e.id);
       compText.focus();
       refreshAddBtn();
+      renderPoints();
     });
+    meta.append(mk);
+
+    const x=document.createElement("button");x.className="ed-x";x.type="button";x.title="Удалить правку";
+    x.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg>';
     x.addEventListener("click",ev=>{ev.stopPropagation();deleteEdit(e.id)});
-    meta.append(mk,x);
+    meta.append(x);
     body.append(p,meta);
-    li.append(tc,body);
-    li.addEventListener("click",()=>seekTo(e.t1,true));
+    li.append(tcWrap,body);
+    li.addEventListener("click",()=>{seekTo(e.t1,true);renderPoints()});
     frag.appendChild(li);
   }
   editsList.appendChild(frag);
@@ -544,18 +588,18 @@ function renderMarkers(){
   if(!(state.videoOpen&&video.duration))return;
   const d=video.duration,frag=document.createDocumentFragment();
   for(const e of state.edits){
-    if(e.t2 && e.t2!==e.t1){
-      const range=document.createElement("div");
-      range.className="tl-marker-range";
-      range.style.left=(e.t1/d*100)+"%";
-      range.style.width=((e.t2-e.t1)/d*100)+"%";
-      range.title=fmtFull(e.t1)+"–"+fmtFull(e.t2)+" — "+e.c;
-      frag.appendChild(range);
+    if(e.t2!=null&&e.t2!==e.t1){
+      const r=document.createElement("div");
+      r.className="tl-marker-range";
+      r.style.left=(e.t1/d*100)+"%";
+      r.style.width=((e.t2-e.t1)/d*100)+"%";
+      r.title=timeStr(e)+(e.p?" · "+ptLabel(e.p):"")+" — "+e.c;
+      frag.appendChild(r);
     }else{
       const m=document.createElement("div");
-      m.className="tl-marker";
+      m.className="tl-marker"+(e.p?" has-pt":"");
       m.style.left=(e.t1/d*100)+"%";
-      m.title=fmtFull(e.t1)+" — "+e.c;
+      m.title=timeStr(e)+(e.p?" · "+ptLabel(e.p):"")+" — "+e.c;
       frag.appendChild(m);
     }
   }
@@ -567,10 +611,82 @@ function setActive(id){
   editsList.querySelectorAll(".ed").forEach(n=>n.classList.toggle("active",n.dataset.id===id));
 }
 
+/* ── точки на кадре ──────────────────── */
+function geom(){
+  const lr=ptLayer.getBoundingClientRect(),vr=video.getBoundingClientRect();
+  const vw=video.videoWidth||16,vh=video.videoHeight||9;
+  const s=Math.min(vr.width/vw,vr.height/vh)||0;
+  const w=vw*s,h=vh*s;
+  return {w,h,ox:vr.left-lr.left+(vr.width-w)/2,oy:vr.top-lr.top+(vr.height-h)/2,lr};
+}
+function coordsFromEvent(ev){
+  const g=geom();
+  if(!g.w||!g.h)return {x:.5,y:.5};
+  return {x:clamp((ev.clientX-(g.lr.left+g.ox))/g.w,0,1),
+          y:clamp((ev.clientY-(g.lr.top+g.oy))/g.h,0,1)};
+}
+function ptPos(el,x,y,g){el.style.left=(g.ox+x*g.w)+"px";el.style.top=(g.oy+y*g.h)+"px"}
+
+function updatePointUI(){
+  btnPoint.classList.toggle("on",state.pointMode);
+  stage.classList.toggle("point-mode",state.pointMode);
+  ptChip.hidden=!state.point;
+  if(state.point)ptChipVal.textContent=ptLabel(state.point);
+}
+function setPointMode(on){
+  if(on&&!(state.videoOpen&&video.duration)){toast("Сначала загрузите видео",1);return}
+  state.pointMode=!!on;
+  if(state.pointMode&&!video.paused)video.pause();
+  updatePointUI();
+  if(state.pointMode)toast("Кликните по кадру, чтобы поставить точку");
+}
+function placePoint(p){
+  state.point=p;
+  if(!state.marker&&state.videoOpen)setMarker(video.currentTime||0);
+  updatePointUI();renderPoints();
+}
+function renderPoints(){
+  if(ptDrag)return;
+  ptLayer.textContent="";
+  if(!(state.videoOpen&&video.duration))return;
+  const g=geom(),ct=video.currentTime,frag=document.createDocumentFragment();
+  for(const e of state.edits){
+    if(!e.p)continue;
+    const end=(e.t2!=null?e.t2:e.t1);
+    if(!(e.id===state.activeId||(ct>=e.t1-0.3&&ct<=end+0.3)))continue;
+    const d=document.createElement("div");
+    d.className="pt";d.title=e.c+" · "+ptLabel(e.p);
+    ptPos(d,e.p.x,e.p.y,g);
+    frag.appendChild(d);
+  }
+  if(state.point){
+    const d=document.createElement("div");
+    d.className="pt pending";d.title="Точка правки — можно перетащить";
+    ptPos(d,state.point.x,state.point.y,g);
+    const tip=document.createElement("span");tip.className="pt-tip";tip.textContent=ptLabel(state.point);
+    d.appendChild(tip);
+    d.addEventListener("pointerdown",ev=>{ev.preventDefault();ev.stopPropagation();ptDrag=true;try{d.setPointerCapture(ev.pointerId)}catch(e){}});
+    d.addEventListener("pointermove",ev=>{
+      if(!ptDrag)return;
+      const p=coordsFromEvent(ev);
+      state.point=p;ptPos(d,p.x,p.y,geom());
+      tip.textContent=ptLabel(p);updatePointUI();
+    });
+    const up=ev=>{if(!ptDrag)return;ptDrag=false;try{d.releasePointerCapture(ev.pointerId)}catch(e){}renderPoints()};
+    d.addEventListener("pointerup",up);d.addEventListener("pointercancel",up);
+    frag.appendChild(d);
+  }
+  ptLayer.appendChild(frag);
+}
+window.addEventListener("resize",renderPoints);
+if(window.ResizeObserver)new ResizeObserver(renderPoints).observe(vwrap);
+document.addEventListener("fullscreenchange",()=>setTimeout(renderPoints,60));
+
 /* ── marker / composer ───────────────── */
-function setMarker(t1, t2, id){
+function setMarker(t1,t2,id,p){
   if(t1==null){
     state.marker=null;
+    state.point=null;
     tlCand.classList.remove("show");
     $("#tlCand2").classList.remove("show");
     $(".tl-range").style.display="none";
@@ -578,6 +694,7 @@ function setMarker(t1, t2, id){
     compTc.value="";
     compTc.placeholder="00:00:00";
     compTc.classList.remove("invalid");
+    updatePointUI();renderPoints();
     if(state.videoOpen&&video.duration){
       btnAdd.disabled=!compText.value.trim();
       compHint.textContent="введите время или момент возьмётся с текущей позиции";
@@ -587,7 +704,8 @@ function setMarker(t1, t2, id){
     }
     return;
   }
-  state.marker={t1, t2:t2||null, id:id||null};
+  state.marker={t1,t2:(t2!=null?t2:null),id:id||null};
+  if(p!==undefined)state.point=p?{x:p.x,y:p.y}:null;
   if(video.duration){
     tlCand.style.left=(t1/video.duration*100)+"%";
     if(t2!=null){
@@ -602,27 +720,27 @@ function setMarker(t1, t2, id){
     }
   }
   tlCand.classList.add("show");
-  compTc.classList.remove("none");
-  compTc.classList.remove("invalid");
+  compTc.classList.remove("none","invalid");
   compTc.value=fmtFull(t1)+(t2!=null?"–"+fmtFull(t2):"");
   btnAdd.disabled=!compText.value.trim();
-  compHint.textContent = id ? "обновит существующую правку" : (t2!=null?"нажмите «Добавить комментарий»":"нажмите «Конец фрагмента» или продолжите");
+  compHint.textContent=id?"обновит существующую правку":(t2!=null?"нажмите «Добавить комментарий»":"можно добавить точку на кадре или конец фрагмента");
+  updatePointUI();renderPoints();
 }
 
 function refreshAddBtn(){
   if(!(state.videoOpen&&video.duration)){btnAdd.disabled=true;return}
+  if(compTc.classList.contains("invalid")){btnAdd.disabled=true;return}
   btnAdd.disabled=!compText.value.trim();
 }
 
 function openComposer(){
   if(!state.videoOpen){toast("Сначала загрузите видео",1);return}
-  if(!video.paused && state.autoPause) video.pause();
-  setMarker(video.currentTime||0);
+  if(!video.paused&&state.autoPause)video.pause();
+  setMarker(video.currentTime||0,null,null,null);
   compText.value="";
   compText.focus();
   comp.scrollIntoView({block:"nearest",behavior:"smooth"});
 }
-
 function autoMarker(){
   if(!state.videoOpen)return;
   if(!state.marker)setMarker(video.currentTime||0);
@@ -635,114 +753,96 @@ function updateHead(){
   tlFill.style.width=p+"%";
   tlHead.style.left=p+"%";
   timeLabel.innerHTML="<b>"+fmt(video.currentTime)+"</b> / "+fmt(video.duration);
+  renderPoints();
 }
-
 function seekTo(t,activate){
   if(!state.videoOpen)return;
-  t=Math.min(Math.max(0,t),video.duration||t);
+  t=clamp(t,0,video.duration||t);
   video.currentTime=t;
   updateHead();
   if(activate){
     let best=null,bd=1e9;
     for(const e of state.edits){
-      const d1=Math.abs(e.t1-t);
-      const d2=e.t2?Math.abs(e.t2-t):d1;
-      const d=Math.min(d1,d2);
+      const d=Math.min(Math.abs(e.t1-t),e.t2!=null?Math.abs(e.t2-t):Math.abs(e.t1-t));
       if(d<bd){bd=d;best=e}
     }
-    if(best&&bd<1.51)setActive(best.id);
+    setActive(best&&bd<1.51?best.id:null);
   }else setActive(null);
+  renderPoints();
 }
-
 function togglePlay(){
   if(!state.videoOpen)return;
   if(video.paused)video.play().catch(()=>{});else video.pause();
 }
 
 video.addEventListener("play",()=>{
-  icPlay.classList.remove("active");
-  icPause.classList.add("active");
+  icPlay.classList.remove("active");icPause.classList.add("active");
   $("#btnPlay").setAttribute("aria-label","Пауза");
   flashIndicator(true);
 });
 video.addEventListener("pause",()=>{
-  icPlay.classList.add("active");
-  icPause.classList.remove("active");
+  icPlay.classList.add("active");icPause.classList.remove("active");
   $("#btnPlay").setAttribute("aria-label","Пуск");
   flashIndicator(false);
 });
 video.addEventListener("timeupdate",updateHead);
-video.addEventListener("loadedmetadata",()=>{state.videoOpen=true;updateHead();renderMarkers()});
+video.addEventListener("loadedmetadata",()=>{state.videoOpen=true;updateHead();renderMarkers();renderPoints();refreshAddBtn()});
 video.addEventListener("durationchange",updateHead);
 video.addEventListener("error",()=>{
   if(!video.currentSrc)return;
   showError("Не удалось воспроизвести видео. Проверьте ссылку: нужен прямой адрес на файл (mp4 / webm), а не страница. Если источник закрыт для внешнего доступа, откройте видео с файла.");
 });
-video.addEventListener("click", togglePlay);
+video.addEventListener("click",ev=>{
+  if(state.pointMode){
+    placePoint(coordsFromEvent(ev));
+    setPointMode(false);
+    toast("Точка поставлена — напишите, что здесь сделать");
+    compText.focus();
+    return;
+  }
+  togglePlay();
+});
 
 /* ── source ──────────────────────────── */
 function setSrc(url,label){
   hideError();
   if(label)urlIn.value=url.length>140?url.slice(0,137)+"…":url;
+  state.videoOpen=false;
   video.src=url;
   setMarker(null);
   setActive(null);
-  $("#emptyStage").style.display="none";
+  setPointMode(false);
   video.hidden=false;
   video.load();
 }
 
-video.addEventListener("loadedmetadata",refreshAddBtn);
-video.addEventListener("pause",refreshAddBtn);
-
 compText.addEventListener("input",()=>{
-  if(state.videoOpen&&video.duration&&!state.marker){
-    setMarker(video.currentTime||0);
-  }
-  btnAdd.disabled=!compText.value.trim();
+  if(state.videoOpen&&video.duration&&!state.marker)setMarker(video.currentTime||0);
+  refreshAddBtn();
 });
-
-compText.addEventListener("focus", () => {
-  if(state.videoOpen && !video.paused && state.autoPause) video.pause();
-  if(state.videoOpen && !state.marker) {
-    setMarker(video.currentTime||0);
-    refreshAddBtn();
-  }
+compText.addEventListener("focus",()=>{
+  if(state.videoOpen&&!video.paused&&state.autoPause)video.pause();
+  if(state.videoOpen&&!state.marker)setMarker(video.currentTime||0);
+  refreshAddBtn();
 });
 
 compTc.addEventListener("input",()=>{
   const val=compTc.value.trim();
-  if(!val){
-    compTc.classList.remove("invalid");
-    return;
-  }
-  
+  if(!val){compTc.classList.remove("invalid");refreshAddBtn();return}
   const parts=val.split(/[–—-]/);
-  let t1=null, t2=null, valid=true;
-  
+  let t1=null,t2=null,ok=true;
   try{
     t1=parseTimeStr(parts[0]);
-    if(parts.length>1 && parts[1].trim()){
-      t2=parseTimeStr(parts[1]);
-      if(t2<t1){valid=false}
-    }
-  }catch(e){
-    valid=false;
-  }
-  
-  if(!valid||t1==null||(t2!=null&&t2<t1)){
-    compTc.classList.add("invalid");
-    btnAdd.disabled=true;
-    return;
-  }
-  
+    if(parts.length>1&&parts[1].trim()){t2=parseTimeStr(parts[1]);if(t2<t1)ok=false}
+  }catch(e){ok=false}
+  if(!ok||t1==null){compTc.classList.add("invalid");btnAdd.disabled=true;return}
   compTc.classList.remove("invalid");
-  
-  if(state.marker){
-    state.marker.t1=t1;
-    state.marker.t2=t2;
+  if(!state.marker)setMarker(t1,t2);
+  else{
+    state.marker.t1=t1;state.marker.t2=t2;
     if(video.duration){
       tlCand.style.left=(t1/video.duration*100)+"%";
+      tlCand.classList.add("show");
       if(t2!=null){
         $("#tlCand2").style.left=(t2/video.duration*100)+"%";
         $("#tlCand2").classList.add("show");
@@ -754,8 +854,8 @@ compTc.addEventListener("input",()=>{
         $(".tl-range").style.display="none";
       }
     }
-    btnAdd.disabled=!compText.value.trim();
   }
+  refreshAddBtn();
 });
 
 $("#btnLoad").addEventListener("click",()=>{
@@ -764,9 +864,7 @@ $("#btnLoad").addEventListener("click",()=>{
   try{new URL(u)}catch(e){toast("Похоже, это не ссылка: нужен http:// или https://",1);return}
   setSrc(u);
 });
-
 urlIn.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#btnLoad").click()}});
-
 fileIn.addEventListener("change",()=>{
   const f=fileIn.files[0];
   if(!f)return;
@@ -777,39 +875,31 @@ fileIn.addEventListener("change",()=>{
 
 /* ── timeline pointer ────────────────── */
 let dragging=false;
-const pctFromEvent=e=>{const r=tl.getBoundingClientRect();return Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))};
-
+const pctFromEvent=e=>{const r=tl.getBoundingClientRect();return clamp((e.clientX-r.left)/r.width,0,1)};
 function ghostAt(p){
   tlGhost.textContent=fmtFull(p*(video.duration||0));
   tlGhost.style.left=(p*100)+"%";
   tlGhost.classList.add("show");
 }
-
 tl.addEventListener("pointerdown",e=>{
   if(!state.videoOpen)return;
   dragging=true;
-  tl.setPointerCapture(e.pointerId);
-  const p=pctFromEvent(e);
-  ghostAt(p);
-  seekTo(p*video.duration,true);
+  try{tl.setPointerCapture(e.pointerId)}catch(err){}
+  const p=pctFromEvent(e);ghostAt(p);seekTo(p*video.duration,true);
 });
-
 tl.addEventListener("pointermove",e=>{
   if(!state.videoOpen)return;
   const p=pctFromEvent(e);
-  if(dragging){ghostAt(p);seekTo(p*video.duration,false)}
-  else ghostAt(p);
+  if(dragging){ghostAt(p);seekTo(p*video.duration,false)}else ghostAt(p);
 });
-
 tl.addEventListener("pointerup",e=>{dragging=false;try{tl.releasePointerCapture(e.pointerId)}catch(err){}});
 tl.addEventListener("pointercancel",()=>{dragging=false});
 tl.addEventListener("pointerleave",()=>{if(!dragging)tlGhost.classList.remove("show")});
-
 tl.addEventListener("dblclick",e=>{
   if(!state.videoOpen)return;
   e.preventDefault();
-  const t=pctFromEvent(e)*video.duration;
-  setMarker(t);
+  if(!video.paused&&state.autoPause)video.pause();
+  setMarker(pctFromEvent(e)*video.duration,null,null,null);
   compText.focus();
 });
 
@@ -817,107 +907,95 @@ tl.addEventListener("dblclick",e=>{
 $("#btnPlay").addEventListener("click",togglePlay);
 $("#btnBack").addEventListener("click",()=>seekTo((video.currentTime||0)-5,false));
 $("#btnFwd").addEventListener("click",()=>seekTo((video.currentTime||0)+5,false));
-
 $("#btnRate").addEventListener("click",()=>{
   state.rateIdx=(state.rateIdx+1)%RATE_STEPS.length;
   const r=RATE_STEPS[state.rateIdx];
   video.playbackRate=r;
   $("#btnRate").textContent=r+"×";
 });
-
-function setVol(v){
+function setVol(v,updateSlider){
   v=Math.min(1,Math.max(0,+v||0));
   video.volume=v;
   video.muted=v===0;
   const b=$("#volBadge");
   b.hidden=v>0;
   b.textContent=Math.round(v*100)+"%";
+  if(updateSlider!==false){
+    const s=$("#volSlider");
+    if(s)s.value=Math.round(v*100);
+  }
   try{localStorage.setItem("video-notes:vol",String(v))}catch(e){}
 }
-
 $("#btnVol").addEventListener("click",()=>{
   if(!video.muted&&video.volume>0)setVol(0);
   else{
-    let prev=parseFloat(localStorage.getItem("video-notes:vol"));
+    const prev=parseFloat(localStorage.getItem("video-notes:vol"));
     setVol(isFinite(prev)&&prev>0?prev:1);
   }
 });
-
+$("#volSlider").addEventListener("input",e=>{
+  setVol(+e.target.value/100,false);
+});
 $("#btnFull").addEventListener("click",()=>{
   if(document.fullscreenElement)document.exitFullscreen();
   else vwrap.requestFullscreen().catch(()=>toast("Полный экран недоступен",1));
 });
-
 $("#btnHideErr").addEventListener("click",hideError);
 
 /* ── composer ────────────────────────── */
 btnClearMark.addEventListener("click",()=>{
+  setPointMode(false);
   setMarker(null);
   compText.value="";
   compText.blur();
   refreshAddBtn();
 });
-
 $("#btnSetEnd").addEventListener("click",()=>{
   if(!state.videoOpen||!state.marker){toast("Сначала отметьте начало фрагмента",1);return}
-  setMarker(state.marker.t1, video.currentTime, state.marker.id);
+  setMarker(state.marker.t1,video.currentTime,state.marker.id);
   compText.focus();
 });
-
 btnAutoPause.addEventListener("click",()=>{
   state.autoPause=!state.autoPause;
-  saveAutoPause();
-  updateAutoPauseUI();
+  saveAutoPause();updateAutoPauseUI();
   toast("Автопауза "+(state.autoPause?"включена":"выключена"));
+});
+btnPoint.addEventListener("click",()=>setPointMode(!state.pointMode));
+ptChip.addEventListener("click",()=>{
+  state.point=null;updatePointUI();renderPoints();toast("Точка убрана");
 });
 
 comp.addEventListener("submit",e=>{
   e.preventDefault();
-  
-  let t1, t2;
-  
-  if(compTc.value.trim() && !compTc.classList.contains("invalid")){
+  let t1,t2=null;
+  if(compTc.value.trim()&&!compTc.classList.contains("invalid")){
     const parts=compTc.value.split(/[–—-]/);
     try{
       t1=parseTimeStr(parts[0]);
-      if(parts.length>1 && parts[1].trim()){
-        t2=parseTimeStr(parts[1]);
-      }
-    }catch(e){
-      toast("Неверный формат времени",1);
-      return;
-    }
+      if(parts.length>1&&parts[1].trim())t2=parseTimeStr(parts[1]);
+    }catch(err){toast("Неверный формат времени",1);return}
   }else if(state.marker){
-    t1=state.marker.t1;
-    t2=state.marker.t2;
+    t1=state.marker.t1;t2=state.marker.t2;
   }else if(state.videoOpen&&video.duration){
     t1=video.currentTime||0;
-  }else{
-    toast("Загрузите видео и укажите момент",1);
-    return;
-  }
-  
-  const txt=compText.value;
-  if(addEdit(t1,t2,txt)){
+  }else{toast("Загрузите видео и укажите момент",1);return}
+
+  if(addEdit(t1,t2,compText.value,state.point)){
     compText.value="";
+    setPointMode(false);
     setMarker(null);
   }
 });
-
 compText.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();comp.requestSubmit()}
-  if(e.key==="Escape"){setMarker(null);compText.value="";refreshAddBtn()}
+  if(e.key==="Escape"){setPointMode(false);setMarker(null);compText.value="";refreshAddBtn()}
 });
 
 /* ── import / export ─────────────────── */
 const importInput=document.createElement("input");
-importInput.type="file";
-importInput.accept=".txt,text/plain";
-importInput.style.display="none";
+importInput.type="file";importInput.accept=".txt,text/plain";importInput.style.display="none";
 document.body.appendChild(importInput);
-
 $("#btnImport").addEventListener("click",()=>importInput.click());
-
 importInput.addEventListener("change",()=>{
   const f=importInput.files[0];
   importInput.value="";
@@ -925,28 +1003,23 @@ importInput.addEventListener("change",()=>{
   const rd=new FileReader();
   rd.onload=()=>{
     const items=parseImport(rd.result);
-    if(!items.length){toast("В файле не найдено ни одной правки. Формат: ЧЧ:ММ:СС — текст или ЧЧ:ММ:СС–ЧЧ:ММ:СС — текст",1);return}
-    state.edits=items.map(e=>({t1:e.t1,t2:e.t2,c:e.c,id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}));
-    save();renderList();renderMarkers();
+    if(!items.length){toast("В файле не найдено ни одной правки. Формат: ЧЧ:ММ:СС — текст",1);return}
+    state.edits=items.map(e=>({t1:e.t1,t2:e.t2,c:e.c,p:e.p,id:uid()}));
+    save();renderList();renderMarkers();renderPoints();
     toast("Импортировано правок: "+items.length);
   };
   rd.onerror=()=>toast("Не удалось прочитать файл",1);
   rd.readAsText(f,"utf-8");
 });
-
 $("#btnExport").addEventListener("click",()=>{
   if(!state.edits.length){toast("Пока нет ни одной правки",1);return}
-  const lines=sortedEdits().map(e=>{
-    const timeStr = e.t2 && e.t2!==e.t1 ? fmtFull(e.t1)+"–"+fmtFull(e.t2) : fmtFull(e.t1);
-    return timeStr+" — "+e.c;
-  });
+  const lines=sortedEdits().map(e=>
+    timeStr(e)+(e.p?" [x:"+pct(e.p.x)+"% y:"+pct(e.p.y)+"%]":"")+" — "+e.c);
   const blob=new Blob([lines.join("\n")+"\n"],{type:"text/plain;charset=utf-8"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
   a.download=new Date().toISOString().slice(0,10)+"-правки.txt";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   toast("Файл с правками ("+state.edits.length+") скачан");
 });
@@ -954,30 +1027,23 @@ $("#btnExport").addEventListener("click",()=>{
 /* ── clear all (modal) ───────────────── */
 const mShow=()=>{mCount.textContent=state.edits.length;mback.hidden=false;$("#mCancel").focus()};
 const mHide=()=>{mback.hidden=true};
-
 $("#btnClear").addEventListener("click",()=>{
   if(!state.edits.length){toast("Список уже пуст",1);return}
   mShow();
 });
-
 $("#mCancel").addEventListener("click",mHide);
 mback.addEventListener("click",e=>{if(e.target===mback)mHide()});
-
 $("#mOk").addEventListener("click",()=>{
   state.edits.length=0;
-  setMarker(null);
-  setActive(null);
-  save();renderList();renderMarkers();
-  mHide();
-  toast("Все правки удалены");
+  setMarker(null);setActive(null);
+  save();renderList();renderMarkers();renderPoints();
+  mHide();toast("Все правки удалены");
 });
 
 /* ── keyboard ────────────────────────── */
 document.addEventListener("keydown",e=>{
-  if(!mback.hidden){
-    if(e.key==="Escape"){mHide();e.preventDefault()}
-    return;
-  }
+  if(!mback.hidden){if(e.key==="Escape"){mHide();e.preventDefault()}return}
+  if(e.key==="Escape"&&state.pointMode){setPointMode(false);e.preventDefault();return}
   const tag=(e.target.tagName||"").toLowerCase();
   const typing=tag==="input"||tag==="textarea"||tag==="button"||tag==="select"||e.target.isContentEditable;
   if(typing)return;
@@ -987,6 +1053,7 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="ArrowRight"){e.preventDefault();seekTo((video.currentTime||0)+5,false)}
   else if(k==="c"||k==="с"){openComposer()}
   else if(k==="a"||k==="ф"){autoMarker();compText.focus()}
+  else if(k==="p"||k==="з"){setPointMode(!state.pointMode)}
   else if(k==="m"||k==="ь"){$("#btnVol").click()}
   else if(k==="f"||k==="а"){$("#btnFull").click()}
 });
@@ -994,11 +1061,12 @@ document.addEventListener("keydown",e=>{
 /* ── init ────────────────────────────── */
 load();
 const savedVol=parseFloat(localStorage.getItem("video-notes:vol"));
-setVol(isFinite(savedVol)&&savedVol>0?savedVol:1);
+setVol(isFinite(savedVol)&&savedVol>0?savedVol:1,false);
 $("#btnRate").textContent="1×";
 renderList();
 setMarker(null);
 updateAutoPauseUI();
+updatePointUI();
 })();
 </script>
 </body>
