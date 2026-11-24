@@ -51,6 +51,10 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .btn.danger:hover{background:rgba(226,114,91,.12);border-color:rgba(226,114,91,.4)}
 .btn.sm{height:29px;padding:0 11px;font-size:12.5px}
 .btn .ic{display:block;flex:none}
+.btn.toggle{gap:6px}
+.btn.toggle .dot{width:7px;height:7px;border-radius:50%;background:var(--faint);transition:background .15s}
+.btn.toggle.on{background:rgba(217,160,102,.15);border-color:var(--accent);color:var(--accent)}
+.btn.toggle.on .dot{background:var(--accent);box-shadow:0 0 6px rgba(217,160,102,.6)}
 
 /* ── Layout ─────────────────────────── */
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
@@ -101,6 +105,8 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .controls{display:flex;align-items:center;gap:8px;padding:8px 12px 12px;flex-wrap:wrap}
 .cbtn{width:34px;height:34px;border-radius:var(--r-sm);display:grid;place-items:center;background:var(--surface2);border:1px solid var(--line);transition:background .15s;flex:none}
 .cbtn:hover{background:var(--surface3);border-color:var(--line2)}
+.cbtn svg{display:none}
+.cbtn svg.active{display:block}
 .time{font:12.5px/1 var(--mono);color:var(--muted);white-space:nowrap}
 .time b{color:var(--text);font-weight:500}
 .spacer{flex:1}
@@ -110,8 +116,6 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .iconbtn .badge[hidden]{display:none}
 .rate{background:var(--surface2);border:1px solid var(--line);border-radius:var(--r-sm);height:34px;padding:0 10px;font:500 12px var(--mono);color:var(--muted);flex:none}
 .rate:hover{background:var(--surface3);color:var(--text)}
-.cbtn svg{display:none}
-.cbtn svg.active{display:block}
 
 /* ── Source bar ─────────────────────── */
 .srcbar{display:flex;gap:8px;padding:12px;flex-wrap:wrap;border-top:1px solid var(--line)}
@@ -142,8 +146,10 @@ button{cursor:pointer;background:none;border:none;padding:0}
 /* ── Composer ───────────────────────── */
 .comp{padding:12px}
 .comp-head{display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap}
-.comp-tc{font:600 12.5px var(--mono);color:var(--accent-ink);background:var(--accent);border-radius:6px;padding:3px 9px}
+.comp-tc{width:auto;min-width:100px;text-align:center;font:600 12.5px var(--mono);color:var(--accent-ink);background:var(--accent);border-radius:6px;padding:3px 9px;border:1px solid transparent;transition:border-color .15s}
 .comp-tc.none{background:var(--surface2);color:var(--faint);border:1px dashed var(--line2)}
+.comp-tc:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(217,160,102,.15)}
+.comp-tc.invalid{background:rgba(226,114,91,.15);color:var(--danger);border-color:var(--danger)}
 .comp-head .lbl{font-size:11.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
 .comp textarea{width:100%;min-height:74px;resize:vertical;padding:9px 11px;border-radius:var(--r-sm);background:var(--bg);border:1px solid var(--line);font-size:13px;line-height:1.5}
 .comp textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(217,160,102,.15)}
@@ -256,18 +262,22 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
       </div>
       <form class="comp" id="comp">
         <div class="comp-head">
-          <span class="comp-tc none" id="compTc">— нет метки —</span>
+          <input type="text" class="comp-tc none" id="compTc" placeholder="00:00:00" autocomplete="off" spellcheck="false">
           <span class="lbl">момент берётся автоматически с текущего положения</span>
         </div>
         <textarea id="compText" placeholder="Что поправить в этом месте? Например: срезать паузу, усилить звук, заменить кадр…" rows="3" maxlength="2000" autocomplete="off"></textarea>
         <div class="comp-row">
           <span class="tiny"><span class="kbd">Enter</span> добавить · <span class="kbd">Esc</span> отменить</span>
           <span class="spacer"></span>
+          <button type="button" class="btn sm toggle on" id="btnAutoPause" title="Автопауза видео при начале ввода правки">
+            <span class="dot"></span>
+            Автопауза
+          </button>
           <button type="button" class="btn sm" id="btnSetEnd" title="Отметить конец фрагмента">Конец фрагмента</button>
           <button type="button" class="btn sm" id="btnClearMark">Отмена</button>
           <button type="submit" class="btn sm primary" id="btnAdd" disabled>
             <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            Добавить
+            Добавить комментарий
           </button>
         </div>
       </form>
@@ -307,15 +317,6 @@ footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
 (()=>{
 "use strict";
 const $=s=>document.querySelector(s);
-const playInd=$("#playInd"),indPlay=$("#indPlay"),indPause=$("#indPause");
-let indTimer;
-function flashIndicator(isPlay){
-  indPlay.hidden=isPlay;
-  indPause.hidden=!isPlay;
-  playInd.classList.add("show");
-  clearTimeout(indTimer);
-  indTimer=setTimeout(()=>playInd.classList.remove("show"),450);
-}
 const video=$("#video"),vwrap=$("#vwrap"),tl=$("#tl"),tlFill=$("#tlFill"),tlHead=$("#tlHead"),
       tlCand=$("#tlCand"),tlGhost=$("#tlGhost"),timeLabel=$("#timeLabel"),
       comp=$("#comp"),compText=$("#compText"),compTc=$("#compTc"),btnAdd=$("#btnAdd"),
@@ -324,9 +325,20 @@ const video=$("#video"),vwrap=$("#vwrap"),tl=$("#tl"),tlFill=$("#tlFill"),tlHead
       urlIn=$("#urlIn"),fileIn=$("#fileIn"),toastEl=$("#toast"),
       mback=$("#mback"),mCount=$("#mCount");
 const icPlay=$("#icPlay"),icPause=$("#icPause");
+const playInd=$("#playInd"),indPlay=$("#indPlay"),indPause=$("#indPause");
+const btnAutoPause=$("#btnAutoPause");
 const STORE="video-notes:v1";
 const RATE_STEPS=[.5,1,1.25,1.5,2];
-const state={edits:[],marker:null,activeId:null,videoOpen:false,rateIdx:1};
+const state={edits:[],marker:null,activeId:null,videoOpen:false,rateIdx:1,autoPause:true};
+
+let indTimer;
+function flashIndicator(isPlay){
+  indPlay.hidden=isPlay;
+  indPause.hidden=!isPlay;
+  playInd.classList.add("show");
+  clearTimeout(indTimer);
+  indTimer=setTimeout(()=>playInd.classList.remove("show"),450);
+}
 
 /* ── helpers ─────────────────────────── */
 const pad=n=>String(n).padStart(2,"0");
@@ -350,13 +362,34 @@ function parseTime(str){
   return h*3600+m*60+s+ms;
 }
 
+function parseTimeStr(str){
+  str=str.trim();
+  const parts=str.split(":");
+  if(parts.length<2||parts.length>3) throw new Error("Invalid format");
+  
+  let h=0,m=0,s=0;
+  if(parts.length===3){
+    h=parseInt(parts[0],10);
+    m=parseInt(parts[1],10);
+    s=parseFloat(parts[2]);
+  }else{
+    m=parseInt(parts[0],10);
+    s=parseFloat(parts[1]);
+  }
+  
+  if(!isFinite(h)||!isFinite(m)||!isFinite(s)||h<0||m<0||m>59||s<0||s>=60){
+    throw new Error("Invalid time");
+  }
+  
+  return h*3600+m*60+s;
+}
+
 function parseImport(text){
   const res=[];
   for(const raw of String(text).split(/\r?\n/)){
     const line=raw.trim();
     if(!line)continue;
     
-    // Пробуем формат с диапазоном: ЧЧ:ММ:СС–ЧЧ:ММ:СС — текст
     let m=line.match(/^(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s*[–—-]\s*(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s*[-–—:]+\s*(.+)$/);
     if(m){
       const t1=parseTime(m[1]), t2=parseTime(m[2]);
@@ -367,7 +400,6 @@ function parseImport(text){
       }
     }
     
-    // Пробуем формат с одним временем: ЧЧ:ММ:СС — текст
     m=line.match(/^(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s*[-–—:]+\s*(.+)$/);
     if(m){
       const t1=parseTime(m[1]);
@@ -378,7 +410,6 @@ function parseImport(text){
       }
     }
     
-    // Пробуем формат без разделителя: ЧЧ:ММ:СС текст
     m=line.match(/^(\d{1,3}:\d{2}(?::\d{2})?(?:[.,]\d+)?)\s+(.+)$/);
     if(m){
       const t1=parseTime(m[1]);
@@ -409,6 +440,17 @@ function load(){
     const a=JSON.parse(localStorage.getItem(STORE));
     if(Array.isArray(a))state.edits=a.filter(e=>e&&isFinite(e.t1)&&typeof e.c==="string");
   }catch(e){}
+  try{
+    const ap=localStorage.getItem("video-notes:autoPause");
+    if(ap!==null) state.autoPause=ap==="1";
+  }catch(e){}
+}
+function saveAutoPause(){
+  try{localStorage.setItem("video-notes:autoPause",state.autoPause?"1":"0")}catch(e){}
+}
+function updateAutoPauseUI(){
+  btnAutoPause.classList.toggle("on",state.autoPause);
+  btnAutoPause.title=state.autoPause?"Автопауза включена — видео останавливается при начале ввода":"Автопауза выключена — видео продолжает играть при вводе";
 }
 
 /* ── edits ───────────────────────────── */
@@ -422,7 +464,6 @@ function addEdit(t1, t2, text){
   t1=Math.min(Math.max(0,+t1||0),video.duration);
   t2=(t2!=null)?Math.min(Math.max(t1,+t2||t1),video.duration):t1;
   
-  // 1. Если редактируем существующую правку по id маркера
   if(state.marker && state.marker.id){
     const idx = state.edits.findIndex(e => e.id === state.marker.id);
     if(idx !== -1){
@@ -435,7 +476,6 @@ function addEdit(t1, t2, text){
     }
   }
   
-  // 2. Если id нет, ищем правку с таким же временем (с небольшой погрешностью)
   const existingIdx = state.edits.findIndex(e => Math.abs(e.t1 - t1) < 0.1 && Math.abs((e.t2||e.t1) - t2) < 0.1);
   if(existingIdx !== -1){
     state.edits[existingIdx].c = text;
@@ -444,7 +484,6 @@ function addEdit(t1, t2, text){
     return true;
   }
 
-  // 3. Если не найдено, создаем новую
   state.edits.push({t1,t2,c:text,id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)});
   save();renderList();renderMarkers();
   toast("Правка добавлена — "+fmtFull(t1)+(t2!==t1?"–"+fmtFull(t2):""));
@@ -506,7 +545,6 @@ function renderMarkers(){
   const d=video.duration,frag=document.createDocumentFragment();
   for(const e of state.edits){
     if(e.t2 && e.t2!==e.t1){
-      // Диапазон - показываем как полосу
       const range=document.createElement("div");
       range.className="tl-marker-range";
       range.style.left=(e.t1/d*100)+"%";
@@ -514,7 +552,6 @@ function renderMarkers(){
       range.title=fmtFull(e.t1)+"–"+fmtFull(e.t2)+" — "+e.c;
       frag.appendChild(range);
     }else{
-      // Точечная метка
       const m=document.createElement("div");
       m.className="tl-marker";
       m.style.left=(e.t1/d*100)+"%";
@@ -538,10 +575,12 @@ function setMarker(t1, t2, id){
     $("#tlCand2").classList.remove("show");
     $(".tl-range").style.display="none";
     compTc.classList.add("none");
-    compTc.textContent="— без метки —";
+    compTc.value="";
+    compTc.placeholder="00:00:00";
+    compTc.classList.remove("invalid");
     if(state.videoOpen&&video.duration){
       btnAdd.disabled=!compText.value.trim();
-      compHint.textContent="момент возьмётся с текущей позиции плеера";
+      compHint.textContent="введите время или момент возьмётся с текущей позиции";
     }else{
       btnAdd.disabled=true;
       compHint.textContent="";
@@ -564,22 +603,20 @@ function setMarker(t1, t2, id){
   }
   tlCand.classList.add("show");
   compTc.classList.remove("none");
-  compTc.textContent=fmtFull(t1)+(t2!=null?"–"+fmtFull(t2):"");
+  compTc.classList.remove("invalid");
+  compTc.value=fmtFull(t1)+(t2!=null?"–"+fmtFull(t2):"");
   btnAdd.disabled=!compText.value.trim();
   compHint.textContent = id ? "обновит существующую правку" : (t2!=null?"нажмите «Добавить комментарий»":"нажмите «Конец фрагмента» или продолжите");
 }
 
 function refreshAddBtn(){
   if(!(state.videoOpen&&video.duration)){btnAdd.disabled=true;return}
-  if(!state.marker && document.activeElement===compText){
-    setMarker(video.currentTime||0);
-  }
   btnAdd.disabled=!compText.value.trim();
 }
 
 function openComposer(){
   if(!state.videoOpen){toast("Сначала загрузите видео",1);return}
-  if(!video.paused) video.pause();
+  if(!video.paused && state.autoPause) video.pause();
   setMarker(video.currentTime||0);
   compText.value="";
   compText.focus();
@@ -650,8 +687,6 @@ function setSrc(url,label){
   video.src=url;
   setMarker(null);
   setActive(null);
-  renderList();
-  renderMarkers();
   $("#emptyStage").style.display="none";
   video.hidden=false;
   video.load();
@@ -659,18 +694,67 @@ function setSrc(url,label){
 
 video.addEventListener("loadedmetadata",refreshAddBtn);
 video.addEventListener("pause",refreshAddBtn);
+
 compText.addEventListener("input",()=>{
-  if(state.videoOpen&&video.duration){
-    if(!state.marker) setMarker(video.currentTime||0);
-    btnAdd.disabled=!compText.value.trim();
+  if(state.videoOpen&&video.duration&&!state.marker){
+    setMarker(video.currentTime||0);
   }
+  btnAdd.disabled=!compText.value.trim();
 });
 
 compText.addEventListener("focus", () => {
-  if(state.videoOpen && !video.paused) video.pause();
+  if(state.videoOpen && !video.paused && state.autoPause) video.pause();
   if(state.videoOpen && !state.marker) {
     setMarker(video.currentTime||0);
-    refreshAddBtn(); // добавляем обновление кнопки
+    refreshAddBtn();
+  }
+});
+
+compTc.addEventListener("input",()=>{
+  const val=compTc.value.trim();
+  if(!val){
+    compTc.classList.remove("invalid");
+    return;
+  }
+  
+  const parts=val.split(/[–—-]/);
+  let t1=null, t2=null, valid=true;
+  
+  try{
+    t1=parseTimeStr(parts[0]);
+    if(parts.length>1 && parts[1].trim()){
+      t2=parseTimeStr(parts[1]);
+      if(t2<t1){valid=false}
+    }
+  }catch(e){
+    valid=false;
+  }
+  
+  if(!valid||t1==null||(t2!=null&&t2<t1)){
+    compTc.classList.add("invalid");
+    btnAdd.disabled=true;
+    return;
+  }
+  
+  compTc.classList.remove("invalid");
+  
+  if(state.marker){
+    state.marker.t1=t1;
+    state.marker.t2=t2;
+    if(video.duration){
+      tlCand.style.left=(t1/video.duration*100)+"%";
+      if(t2!=null){
+        $("#tlCand2").style.left=(t2/video.duration*100)+"%";
+        $("#tlCand2").classList.add("show");
+        $(".tl-range").style.display="block";
+        $(".tl-range").style.left=(t1/video.duration*100)+"%";
+        $(".tl-range").style.width=((t2-t1)/video.duration*100)+"%";
+      }else{
+        $("#tlCand2").classList.remove("show");
+        $(".tl-range").style.display="none";
+      }
+    }
+    btnAdd.disabled=!compText.value.trim();
   }
 });
 
@@ -770,7 +854,7 @@ $("#btnHideErr").addEventListener("click",hideError);
 btnClearMark.addEventListener("click",()=>{
   setMarker(null);
   compText.value="";
-  compText.blur(); // убираем фокус, чтобы не срабатывала автоустановка метки
+  compText.blur();
   refreshAddBtn();
 });
 
@@ -780,17 +864,40 @@ $("#btnSetEnd").addEventListener("click",()=>{
   compText.focus();
 });
 
+btnAutoPause.addEventListener("click",()=>{
+  state.autoPause=!state.autoPause;
+  saveAutoPause();
+  updateAutoPauseUI();
+  toast("Автопауза "+(state.autoPause?"включена":"выключена"));
+});
+
 comp.addEventListener("submit",e=>{
   e.preventDefault();
-  if(!state.marker){
-    if(state.videoOpen&&video.duration){
-      setMarker(video.currentTime||0);
-    }else{
-      toast("Загрузите видео и укажите момент",1);
+  
+  let t1, t2;
+  
+  if(compTc.value.trim() && !compTc.classList.contains("invalid")){
+    const parts=compTc.value.split(/[–—-]/);
+    try{
+      t1=parseTimeStr(parts[0]);
+      if(parts.length>1 && parts[1].trim()){
+        t2=parseTimeStr(parts[1]);
+      }
+    }catch(e){
+      toast("Неверный формат времени",1);
       return;
     }
+  }else if(state.marker){
+    t1=state.marker.t1;
+    t2=state.marker.t2;
+  }else if(state.videoOpen&&video.duration){
+    t1=video.currentTime||0;
+  }else{
+    toast("Загрузите видео и укажите момент",1);
+    return;
   }
-  const t1=state.marker.t1, t2=state.marker.t2, txt=compText.value;
+  
+  const txt=compText.value;
   if(addEdit(t1,t2,txt)){
     compText.value="";
     setMarker(null);
@@ -891,6 +998,7 @@ setVol(isFinite(savedVol)&&savedVol>0?savedVol:1);
 $("#btnRate").textContent="1×";
 renderList();
 setMarker(null);
+updateAutoPauseUI();
 })();
 </script>
 </body>
