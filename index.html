@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Video Notes — минималистичный инструмент для построчных правок к видео по тайм-кодам">
+<title>Video Notes — правки к видео</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231a1a1e'/%3E%3Cpath d='M12 10l12 6-12 6z' fill='%23d9a066'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0f0f11; --surface:#16161a; --surface2:#1e1e24; --surface3:#26262e;
+  --line:#2a2a31; --line2:#3a3a44;
+  --text:#ececf1; --muted:#a2a2ad; --faint:#6f6f7b;
+  --accent:#d9a066; --accent-ink:#161207; --danger:#e2725b;
+  --r:10px; --r-sm:7px;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"Cascadia Code",Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none;padding:0}
+::selection{background:rgba(217,160,102,.3)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:8px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+
+.app{max-width:1180px;margin:0 auto;padding:0 20px}
+
+/* ── Header ─────────────────────────── */
+.hdr{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--line);margin-bottom:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.01em;white-space:nowrap}
+.brand .mark{width:26px;height:26px;border-radius:7px;background:var(--surface2);display:grid;place-items:center;flex:none}
+.brand .mark svg{display:block}
+.brand small{color:var(--faint);font-weight:450;margin-left:2px}
+.hdr-actions{display:flex;gap:8px}
+
+/* ── Buttons ────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 15px;border-radius:var(--r-sm);
+  background:var(--surface2);border:1px solid var(--line);color:var(--text);
+  font-size:13px;font-weight:550;transition:background .15s,border-color .15s,transform .05s;user-select:none;white-space:nowrap}
+.btn:hover{background:var(--surface3);border-color:var(--line2)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:#e4ad74}
+.btn.danger{color:var(--danger)}
+.btn.danger:hover{background:rgba(226,114,91,.12);border-color:rgba(226,114,91,.4)}
+.btn.sm{height:29px;padding:0 11px;font-size:12.5px}
+.btn .ic{display:block;flex:none}
+
+/* ── Layout ─────────────────────────── */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.grid{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;margin-top:16px}
+@media (max-width:920px){.grid{grid-template-columns:1fr}}
+.p-head{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.p-head h2{font-size:13px;font-weight:650;margin:0;letter-spacing:.02em}
+.p-head .count{font-size:11.5px;color:var(--faint);font-family:var(--mono);background:var(--surface2);border-radius:20px;padding:1px 8px}
+.p-head .spacer{flex:1}
+.hint{margin:0;padding:10px 14px;font-size:12.5px;color:var(--faint);border-top:1px solid var(--line);line-height:1.5}
+
+/* ── Video stage ────────────────────── */
+.stage{overflow:hidden}
+.stage video{display:block;width:100%;max-height:62vh;background:#000;aspect-ratio:16/9;object-fit:contain}
+.vwrap{position:relative}
+.vwrap::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--line);pointer-events:none}
+.empty-stage{position:relative}
+.empty-stage .placeholder{position:absolute;inset:0;display:grid;place-items:center;background:#0a0a0c}
+.ph-box{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--faint);text-align:center;padding:20px}
+.ph-box p{margin:0;font-size:13.5px;max-width:340px;line-height:1.6}
+.kbd{font:10.5px var(--mono);background:var(--surface2);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:var(--muted)}
+.errbar{display:none;align-items:center;gap:10px;padding:9px 14px;background:rgba(226,114,91,.1);border-top:1px solid rgba(226,114,91,.35);color:#f0a28f;font-size:12.5px}
+.errbar.show{display:flex}
+.errbar .spacer{flex:1}
+
+/* ── Timeline ───────────────────────── */
+.tl{position:relative;height:44px;cursor:pointer;touch-action:none;user-select:none;outline-offset:4px}
+.tl-rail{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:5px;background:var(--surface3);border-radius:3px}
+.tl-fill{position:absolute;left:0;top:50%;transform:translateY(-50%);height:5px;width:0;background:var(--accent);border-radius:3px}
+.tl-head{position:absolute;top:50%;left:0;width:13px;height:13px;background:var(--accent);border:2px solid var(--bg);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 6px rgba(0,0,0,.5)}
+.tl-marker{position:absolute;top:50%;width:9px;height:9px;background:#fff;border:2px solid #0c0c0e;border-radius:50%;transform:translate(-50%,-50%);z-index:2;pointer-events:none}
+.tl-cand{position:absolute;top:50%;width:13px;height:13px;border:2px solid var(--accent);background:rgba(217,160,102,.25);border-radius:50%;transform:translate(-50%,-50%);display:none;z-index:3;pointer-events:none;box-shadow:0 0 0 4px rgba(217,160,102,.15)}
+.tl-cand.show{display:block}
+.tl-ghost{position:absolute;bottom:100%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--line2);color:var(--text);font:11px/1 var(--mono);padding:4px 7px;border-radius:5px;white-space:nowrap;display:none;pointer-events:none;z-index:4}
+.tl-ghost.show{display:block}
+.tl-ghost::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--line2)}
+
+/* ── Player controls ────────────────── */
+.controls{display:flex;align-items:center;gap:8px;padding:8px 12px 12px;flex-wrap:wrap}
+.cbtn{width:34px;height:34px;border-radius:var(--r-sm);display:grid;place-items:center;background:var(--surface2);border:1px solid var(--line);transition:background .15s;flex:none}
+.cbtn:hover{background:var(--surface3);border-color:var(--line2)}
+.time{font:12.5px/1 var(--mono);color:var(--muted);white-space:nowrap}
+.time b{color:var(--text);font-weight:500}
+.spacer{flex:1}
+.iconbtn{width:34px;height:34px;border-radius:var(--r-sm);display:grid;place-items:center;color:var(--muted);position:relative;flex:none}
+.iconbtn:hover{background:var(--surface3);color:var(--text)}
+.iconbtn .badge{position:absolute;top:1px;right:1px;min-width:14px;height:14px;padding:0 3px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font:600 9.5px/14px var(--sans);text-align:center}
+.iconbtn .badge[hidden]{display:none}
+.rate{background:var(--surface2);border:1px solid var(--line);border-radius:var(--r-sm);height:34px;padding:0 10px;font:500 12px var(--mono);color:var(--muted);flex:none}
+.rate:hover{background:var(--surface3);color:var(--text)}
+
+/* ── Source bar ─────────────────────── */
+.srcbar{display:flex;gap:8px;padding:12px;flex-wrap:wrap;border-top:1px solid var(--line)}
+.urlin{flex:1;min-width:220px;height:36px;padding:0 13px;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--line);color:var(--text);font-size:13px}
+.urlin::placeholder{color:var(--faint)}
+.urlin:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(217,160,102,.15)}
+.srcbar .btn{flex:none}
+
+/* ── Edits list ─────────────────────── */
+.edits{list-style:none;margin:0;padding:0;max-height:430px;overflow-y:auto}
+@media (max-width:920px){.edits{max-height:320px}}
+@media (max-width:920px){.edits{max-height:430px;order:2}}
+.ed{display:flex;gap:10px;padding:10px 12px;border-top:1px solid var(--line);cursor:pointer;transition:background .12s}
+.edits .ed:first-child{border-top:none}
+.ed:hover{background:var(--surface2)}
+.ed.active{background:rgba(217,160,102,.09);box-shadow:inset 2px 0 0 var(--accent)}
+.ed-tc{flex:none;font:500 12px/1.7 var(--mono);color:var(--accent);background:rgba(217,160,102,.1);padding:2px 8px;border-radius:6px;height:fit-content;white-space:nowrap}
+.ed-body{flex:1;min-width:0}
+.ed-text{font-size:13px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.ed-meta{margin-top:5px;display:flex;align-items:center;gap:8px}
+.ed-mark{font-size:11.5px;font-family:var(--mono);color:var(--faint);padding:2px 6px;border-radius:4px}
+.ed-mark:hover{background:var(--surface3);color:var(--accent)}
+.ed-x{width:26px;height:26px;flex:none;border-radius:6px;display:grid;place-items:center;color:var(--faint);opacity:0;transition:opacity .12s,background .12s}
+.ed:hover .ed-x,.ed.active .ed-x{opacity:1}
+.ed-x:hover{background:rgba(226,114,91,.15);color:var(--danger)}
+.list-empty{padding:26px 14px;text-align:center;color:var(--faint);font-size:12.5px;line-height:1.6}
+.list-empty svg{display:block;margin:0 auto 10px;opacity:.6}
+
+/* ── Composer ───────────────────────── */
+.comp{padding:12px}
+.comp-head{display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap}
+.comp-tc{font:600 12.5px var(--mono);color:var(--accent-ink);background:var(--accent);border-radius:6px;padding:3px 9px}
+.comp-tc.none{background:var(--surface2);color:var(--faint);border:1px dashed var(--line2)}
+.comp-head .lbl{font-size:11.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+.comp textarea{width:100%;min-height:74px;resize:vertical;padding:9px 11px;border-radius:var(--r-sm);background:var(--bg);border:1px solid var(--line);font-size:13px;line-height:1.5}
+.comp textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(217,160,102,.15)}
+.comp-row{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.comp-row .spacer{flex:1}
+.tiny{font-size:11px;color:var(--faint);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* ── Toast ──────────────────────────── */
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,16px);background:var(--surface3);border:1px solid var(--line2);color:var(--text);font-size:12.5px;padding:9px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;box-shadow:0 8px 28px rgba(0,0,0,.45);max-width:min(92vw,480px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{border-color:rgba(226,114,91,.5);color:#f0a28f}
+
+footer{margin:26px 0 14px;text-align:center;color:var(--faint);font-size:11.5px}
+
+/* ── Modal ──────────────────────────── */
+.mback{position:fixed;inset:0;background:rgba(5,5,7,.62);display:grid;place-items:center;z-index:40}
+.mback[hidden]{display:none}
+.modal{width:min(420px,92vw);background:var(--surface);border:1px solid var(--line2);border-radius:12px;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.modal h3{margin:0 0 6px;font-size:15px}
+.modal p{margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.55}
+.modal .row{display:flex;justify-content:flex-end;gap:8px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="hdr">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M8 5.5l11 6.5-11 6.5z" fill="#d9a066"/><rect x="4" y="5.5" width="2.4" height="13" rx="1.2" fill="#ececf1"/></svg>
+      </span>
+      Video Notes <small>правки к видео</small>
+    </div>
+    <div class="hdr-actions">
+      <button class="btn" id="btnImport" title="Загрузить правки из .txt">
+        <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        Импорт .txt
+      </button>
+      <button class="btn primary" id="btnExport" title="Скачать все правки в .txt">
+        <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
+        Скачать .txt
+      </button>
+    </div>
+  </header>
+
+  <section class="panel stage" aria-label="Плеер">
+    <div class="vwrap" id="vwrap">
+      <video id="video" preload="auto" playsinline hidden oncontextmenu="event.preventDefault()"></video>
+      <div class="empty-stage" id="emptyStage">
+        <div class="placeholder">
+          <div class="ph-box">
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 9.5l5-3v11l-5-3"/></svg>
+            <p>Вставьте ссылку на видео или откройте файл с диска —<br>и отмечайте правки прямо на таймлайне.</p>
+            <p><span class="kbd">Space</span> плей &nbsp; <span class="kbd">C</span> новая правка &nbsp; <span class="kbd">←</span> <span class="kbd">→</span> перемотка 5 сек</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="errbar" id="errbar" role="alert">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5m0 3h.01"/></svg>
+      <span id="errMsg" style="flex:1"></span>
+      <button class="btn sm" id="btnHideErr">Скрыть</button>
+    </div>
+    <div class="tl" id="tl" tabindex="0" aria-label="Таймлайн. Клик — перемотка. Двойной клик или клавиша C — отметить момент и написать правку">
+      <div class="tl-rail"></div>
+      <div class="tl-fill" id="tlFill"></div>
+      <div class="tl-cand" id="tlCand"></div>
+      <div class="tl-ghost" id="tlGhost">00:00</div>
+      <div class="tl-head" id="tlHead"></div>
+    </div>
+    <div class="controls">
+      <button class="cbtn" id="btnPlay" aria-label="Пауза">
+        <svg id="icPlay" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M8 5.5v13l11-6.5z"/></svg>
+        <svg id="icPause" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg>
+      </button>
+      <button class="iconbtn" id="btnBack" title="Назад 5 секунд" aria-label="Назад 5 секунд">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 18.5 4.5 12 11 5.5M20 18.5 13.5 12 20 5.5"/></svg>
+      </button>
+      <button class="iconbtn" id="btnFwd" title="Вперёд 5 секунд" aria-label="Вперёд 5 секунд">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m13 5.5 6.5 6.5L13 18.5M4 5.5l6.5 6.5L4 18.5"/></svg>
+      </button>
+      <span class="time" id="timeLabel"><b>0:00</b> / 0:00</span>
+      <span class="spacer"></span>
+      <button class="iconbtn" id="btnVol" title="Звук / выключить (M)" aria-label="Звук">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6.5 9H3v6h3.5L11 19zM15.5 8.5a5 5 0 0 1 0 7M18.5 6a9 9 0 0 1 0 12"/></svg>
+        <span class="badge" id="volBadge" hidden>0%</span>
+      </button>
+      <button class="rate" id="btnRate" title="Скорость воспроизведения">1×</button>
+      <button class="iconbtn" id="btnFull" title="Полный экран (F)" aria-label="Полный экран">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M8 21H4a1 1 0 0 1-1-1v-4M16 21h4a1 1 0 0 0 1-1v-4"/></svg>
+      </button>
+    </div>
+    <div class="srcbar">
+      <input class="urlin" id="urlIn" type="url" inputmode="url" placeholder="https://… ссылка на видео (прямой адрес на mp4 / webm) " spellcheck="false" autocomplete="off">
+      <button class="btn primary" id="btnLoad">Загрузить видео</button>
+      <label class="btn" title="Открыть видео-файл с диска">
+        <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        С файла
+        <input type="file" id="fileIn" accept="video/*" hidden>
+      </label>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="panel" aria-label="Новая правка">
+      <div class="p-head">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--faint)"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+        <h2>Новая правка</h2>
+        <span class="spacer"></span>
+        <span id="compHint" style="font-size:12px;color:var(--faint)"></span>
+      </div>
+      <form class="comp" id="comp">
+        <div class="comp-head">
+          <span class="comp-tc none" id="compTc">— нет метки —</span>
+          <span class="lbl">момент берётся автоматически с текущего положения</span>
+        </div>
+        <textarea id="compText" placeholder="Что поправить в этом месте? Например: срезать паузу, усилить звук, заменить кадр…" rows="3" maxlength="2000" autocomplete="off"></textarea>
+        <div class="comp-row">
+          <span class="tiny"><span class="kbd">Enter</span> добавить · <span class="kbd">Esc</span> отменить</span>
+          <span class="spacer"></span>
+          <button type="button" class="btn sm" id="btnClearMark">Отмена</button>
+          <button type="submit" class="btn sm primary" id="btnAdd" disabled>
+            <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Добавить комментарий
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" aria-label="Список правок">
+      <div class="p-head">
+        <h2>Правки</h2>
+        <span class="count" id="edCount">0</span>
+        <span class="spacer"></span>
+        <button class="btn sm danger" id="btnClear" title="Удалить все правки">Очистить</button>
+      </div>
+      <ol class="edits" id="editsList"></ol>
+      <p class="hint">Клик по строке — перемотка к правке. Формат файла: <span style="font-family:var(--mono)">ЧЧ:ММ:СС — текст</span>. Отметки хранятся в этом браузере.</p>
+    </section>
+  </div>
+
+  <footer>Video Notes · один файл, без зависимостей и сборки · данные не покидают ваш браузер</footer>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<div class="mback" id="mback" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <h3 id="mTitle">Очистить все правки?</h3>
+    <p>Будут удалены все <b id="mCount">0</b> отметок. Действие нельзя отменить — при необходимости сначала скачайте файл с правками.</p>
+    <div class="row">
+      <button class="btn" id="mCancel">Отмена</button>
+      <button class="btn danger" id="mOk">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+"use strict";
+const $=s=>document.querySelector(s);
+const video=$("#video"),vwrap=$("#vwrap"),tl=$("#tl"),tlFill=$("#tlFill"),tlHead=$("#tlHead"),
+      tlCand=$("#tlCand"),tlGhost=$("#tlGhost"),timeLabel=$("#timeLabel"),
+      comp=$("#comp"),compText=$("#compText"),compTc=$("#compTc"),btnAdd=$("#btnAdd"),
+      compHint=$("#compHint"),btnClearMark=$("#btnClearMark"),
+      editsList=$("#editsList"),edCount=$("#edCount"),
+      urlIn=$("#urlIn"),fileIn=$("#fileIn"),toastEl=$("#toast"),
+      mback=$("#mback"),mCount=$("#mCount");
+const icPlay=$("#icPlay"),icPause=$("#icPause");
+const STORE="video-notes:v1";
+const RATE_STEPS=[.5,1,1.25,1.5,2];
+const state={edits:[],marker:null,activeId:null,videoOpen:false,rateIdx:1};
+
+/* ── helpers ─────────────────────────── */
+const pad=n=>String(n).padStart(2,"0");
+const fmt=t=>{t=Math.max(0,t|0);const h=t/3600|0,m=(t/60|0)%60,s=t%60;return(h?pad(h)+":":"")+pad(m)+":"+pad(s)};
+const fmtFull=t=>{t=Math.max(0,t|0);return pad(t/3600|0)+":"+pad((t/60|0)%60)+":"+pad(t%60)};
+function parseImport(text){
+  const res=[];
+  for(const raw of String(text).split(/\r?\n/)){
+    const line=raw.trim();
+    if(!line)continue;
+    let m=line.match(/^(\d{1,3}):([0-5]?\d)(?::([0-5]?\d)(?:[.,](\d+))?)?\s*[-–—:]+\s*(.+)$/);
+    let t,cap;
+    if(m){t=+m[1]*3600+ +m[2]*60+ +(m[3]||0)+(m[4]?+("0."+m[4]):0);cap=m[5];}
+    else{
+      m=line.match(/^(\d{1,3}):([0-5]?\d)(?::([0-5]?\d)(?:[.,](\d+))?)?\s+(.+)$/);
+      if(!m)continue;
+      t=+m[1]*3600+ +m[2]*60+ +(m[3]||0)+(m[4]?+("0."+m[4]):0);cap=m[5];
+    }
+    cap=cap.replace(/^["«'`]+|["»'`]+$/g,"").trim();
+    if(!cap||!isFinite(t)||t<0)continue;
+    res.push({t,c:cap});
+  }
+  return res;
+}
+let toastTimer;
+function toast(msg,isErr){
+  toastEl.textContent=msg;
+  toastEl.classList.toggle("err",!!isErr);
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toastEl.classList.remove("show"),2600);
+}
+function showError(msg){$("#errMsg").textContent=msg;$("#errbar").classList.add("show")}
+function hideError(){$("#errbar").classList.remove("show")}
+
+/* ── storage ─────────────────────────── */
+function save(){try{localStorage.setItem(STORE,JSON.stringify(state.edits))}catch(e){}}
+function load(){
+  try{
+    const a=JSON.parse(localStorage.getItem(STORE));
+    if(Array.isArray(a))state.edits=a.filter(e=>e&&isFinite(e.t)&&typeof e.c==="string");
+  }catch(e){}
+}
+
+/* ── edits ───────────────────────────── */
+const sortedEdits=()=>[...state.edits].sort((a,b)=>a.t-b.t);
+function addEdit(t,text){
+  text=String(text||"").replace(/\s+/g," ").trim().slice(0,2000);
+  if(!text){toast("Введите текст правки",1);return false}
+  t=Math.min(Math.max(0,+t||0),video.duration||1e9);
+  state.edits.push({t,c:text,id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)});
+  save();renderList();renderMarkers();
+  toast("Правка добавлена — "+fmtFull(t));
+  return true;
+}
+function deleteEdit(id){
+  state.edits=state.edits.filter(e=>e.id!==id);
+  if(state.activeId===id)setActive(null);
+  if(state.marker&&state.marker.id===id)setMarker(null);
+  save();renderList();renderMarkers();
+  toast("Правка удалена");
+}
+function renderList(){
+  edCount.textContent=state.edits.length;
+  editsList.textContent="";
+  if(!state.edits.length){
+    const li=document.createElement("li");
+    li.className="list-empty";
+    li.innerHTML='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/></svg>Пока пусто. Отметьте момент на таймлайне и добавьте первую правку.';
+    editsList.appendChild(li);
+    return;
+  }
+  const frag=document.createDocumentFragment();
+  for(const e of sortedEdits()){
+    const li=document.createElement("li");
+    li.className="ed"+(e.id===state.activeId?" active":"");
+    li.dataset.id=e.id;
+    const tc=document.createElement("span");tc.className="ed-tc";tc.textContent=fmtFull(e.t);
+    const body=document.createElement("div");body.className="ed-body";
+    const p=document.createElement("div");p.className="ed-text";p.textContent=e.c;
+    const meta=document.createElement("div");meta.className="ed-meta";
+    const mk=document.createElement("button");mk.className="ed-mark";mk.type="button";mk.textContent="изменить метку";
+    const x=document.createElement("button");x.className="ed-x";x.type="button";x.title="Удалить правку";
+    x.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"/></svg>';
+    mk.addEventListener("click",ev=>{ev.stopPropagation();setMarker(e.t);compText.focus()});
+    x.addEventListener("click",ev=>{ev.stopPropagation();deleteEdit(e.id)});
+    meta.append(mk,x);
+    body.append(p,meta);
+    li.append(tc,body);
+    li.addEventListener("click",()=>seekTo(e.t,true));
+    frag.appendChild(li);
+  }
+  editsList.appendChild(frag);
+}
+function renderMarkers(){
+  tl.querySelectorAll(".tl-marker").forEach(n=>n.remove());
+  if(!(state.videoOpen&&video.duration))return;
+  const d=video.duration,frag=document.createDocumentFragment();
+  for(const e of state.edits){
+    const m=document.createElement("div");
+    m.className="tl-marker";
+    m.style.left=(e.t/d*100)+"%";
+    m.title=fmtFull(e.t)+" — "+e.c;
+    frag.appendChild(m);
+  }
+  tl.appendChild(frag);
+}
+function setActive(id){
+  state.activeId=id;
+  editsList.querySelectorAll(".ed").forEach(n=>n.classList.toggle("active",n.dataset.id===id));
+}
+
+/* ── marker / composer ───────────────── */
+function setMarker(t){
+  if(t==null){
+    state.marker=null;
+    tlCand.classList.remove("show");
+    compTc.classList.add("none");
+    compTc.textContent="— нет метки —";
+    btnAdd.disabled=true;
+    btnClearMark.hidden=true;
+    compHint.textContent="момент берётся с текущей позиции";
+    return;
+  }
+  state.marker={t};
+  tlCand.style.left=(t/(video.duration||1)*100)+"%";
+  tlCand.classList.add("show");
+  compTc.classList.remove("none");
+  compTc.textContent=fmtFull(t);
+  btnAdd.disabled=false;
+  btnClearMark.hidden=false;
+  compHint.textContent="нажмите «Добавить комментарий» или Enter";
+}
+function openComposer(){
+  if(!state.videoOpen){toast("Сначала загрузите видео",1);return}
+  setMarker(video.currentTime||0);
+  compText.value="";
+  compText.focus();
+  comp.scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+function autoMarker(){
+  if(!state.videoOpen)return;
+  setMarker(video.currentTime||0);
+}
+
+/* ── player ──────────────────────────── */
+function updateHead(){
+  if(!(state.videoOpen&&video.duration))return;
+  const p=video.currentTime/video.duration*100;
+  tlFill.style.width=p+"%";
+  tlHead.style.left=p+"%";
+  timeLabel.innerHTML="<b>"+fmt(video.currentTime)+"</b> / "+fmt(video.duration);
+}
+function seekTo(t,activate){
+  if(!state.videoOpen)return;
+  t=Math.min(Math.max(0,t),video.duration||t);
+  video.currentTime=t;
+  updateHead();
+  if(activate){
+    let best=null,bd=1e9;
+    for(const e of state.edits){const d=Math.abs(e.t-t);if(d<bd){bd=d;best=e}}
+    if(best&&bd<1.51)setActive(best.id);
+  }else setActive(null);
+}
+function togglePlay(){
+  if(!state.videoOpen)return;
+  if(video.paused)video.play().catch(()=>{});else video.pause();
+}
+video.addEventListener("play",()=>{icPlay.hidden=true;icPause.hidden=false;$("#btnPlay").setAttribute("aria-label","Пауза")});
+video.addEventListener("pause",()=>{icPlay.hidden=false;icPause.hidden=true;$("#btnPlay").setAttribute("aria-label","Пуск")});
+video.addEventListener("timeupdate",updateHead);
+video.addEventListener("loadedmetadata",()=>{state.videoOpen=true;updateHead();renderMarkers()});
+video.addEventListener("durationchange",updateHead);
+video.addEventListener("error",()=>{
+  if(!video.currentSrc)return;
+  showError("Не удалось воспроизвести видео. Проверьте ссылку: нужен прямой адрес на файл (mp4 / webm), а не страница. Если источник закрыт для внешнего доступа, откройте видео с файла.");
+});
+
+/* ── source ──────────────────────────── */
+function setSrc(url,label){
+  hideError();
+  if(label)urlIn.value=url.length>140?url.slice(0,137)+"…":url;
+  video.src=url;
+  state.edits.length=0;
+  setMarker(null);
+  setActive(null);
+  renderList();
+  renderMarkers();
+  $("#emptyStage").style.display="none";
+  video.hidden=false;
+  video.load();
+}
+$("#btnLoad").addEventListener("click",()=>{
+  const u=urlIn.value.trim();
+  if(!u){urlIn.focus();toast("Вставьте ссылку на видео",1);return}
+  try{new URL(u)}catch(e){toast("Похоже, это не ссылка: нужен http:// или https://",1);return}
+  setSrc(u);
+});
+urlIn.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#btnLoad").click()}});
+fileIn.addEventListener("change",()=>{
+  const f=fileIn.files[0];
+  if(!f)return;
+  setSrc(URL.createObjectURL(f),f.name);
+  toast("Видео загружено: "+f.name);
+  fileIn.value="";
+});
+
+/* ── timeline pointer ────────────────── */
+let dragging=false;
+const pctFromEvent=e=>{const r=tl.getBoundingClientRect();return Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))};
+function ghostAt(p){
+  tlGhost.textContent=fmtFull(p*(video.duration||0));
+  tlGhost.style.left=(p*100)+"%";
+  tlGhost.classList.add("show");
+}
+tl.addEventListener("pointerdown",e=>{
+  if(!state.videoOpen)return;
+  dragging=true;
+  tl.setPointerCapture(e.pointerId);
+  const p=pctFromEvent(e);
+  ghostAt(p);
+  seekTo(p*video.duration,true);
+});
+tl.addEventListener("pointermove",e=>{
+  if(!state.videoOpen)return;
+  const p=pctFromEvent(e);
+  if(dragging){ghostAt(p);seekTo(p*video.duration,false)}
+  else ghostAt(p);
+});
+tl.addEventListener("pointerup",e=>{dragging=false;try{tl.releasePointerCapture(e.pointerId)}catch(err){}});
+tl.addEventListener("pointercancel",()=>{dragging=false});
+tl.addEventListener("pointerleave",()=>{if(!dragging)tlGhost.classList.remove("show")});
+tl.addEventListener("dblclick",e=>{
+  if(!state.videoOpen)return;
+  e.preventDefault();
+  const t=pctFromEvent(e)*video.duration;
+  setMarker(t);
+  compText.focus();
+});
+
+/* ── controls ────────────────────────── */
+$("#btnPlay").addEventListener("click",togglePlay);
+$("#btnBack").addEventListener("click",()=>seekTo((video.currentTime||0)-5,false));
+$("#btnFwd").addEventListener("click",()=>seekTo((video.currentTime||0)+5,false));
+$("#btnRate").addEventListener("click",()=>{
+  state.rateIdx=(state.rateIdx+1)%RATE_STEPS.length;
+  const r=RATE_STEPS[state.rateIdx];
+  video.playbackRate=r;
+  $("#btnRate").textContent=r+"×";
+});
+function setVol(v){
+  v=Math.min(1,Math.max(0,+v||0));
+  video.volume=v;
+  video.muted=v===0;
+  const b=$("#volBadge");
+  b.hidden=v>0;
+  b.textContent=Math.round(v*100)+"%";
+  try{localStorage.setItem("video-notes:vol",String(v))}catch(e){}
+}
+$("#btnVol").addEventListener("click",()=>{
+  if(!video.muted&&video.volume>0)setVol(0);
+  else{
+    let prev=parseFloat(localStorage.getItem("video-notes:vol"));
+    setVol(isFinite(prev)&&prev>0?prev:1);
+  }
+});
+$("#btnFull").addEventListener("click",()=>{
+  if(document.fullscreenElement)document.exitFullscreen();
+  else vwrap.requestFullscreen().catch(()=>toast("Полный экран недоступен",1));
+});
+$("#btnHideErr").addEventListener("click",hideError);
+
+/* ── composer ────────────────────────── */
+btnClearMark.addEventListener("click",()=>{setMarker(null);compText.value=""});
+comp.addEventListener("submit",e=>{
+  e.preventDefault();
+  autoMarker();
+  if(!state.marker){toast("Загрузите видео и укажите момент",1);return}
+  const t=state.marker.t,txt=compText.value;
+  if(addEdit(t,txt)){
+    compText.value="";
+    setMarker(null);
+  }
+});
+compText.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();comp.requestSubmit()}
+  if(e.key==="Escape"){setMarker(null);compText.value=""}
+});
+
+/* ── import / export ─────────────────── */
+const importInput=document.createElement("input");
+importInput.type="file";
+importInput.accept=".txt,text/plain";
+importInput.style.display="none";
+document.body.appendChild(importInput);
+$("#btnImport").addEventListener("click",()=>importInput.click());
+importInput.addEventListener("change",()=>{
+  const f=importInput.files[0];
+  importInput.value="";
+  if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const items=parseImport(rd.result);
+    if(!items.length){toast("В файле не найдено ни одной правки. Формат: ЧЧ:ММ:СС — текст",1);return}
+    state.edits=items.map(e=>({t:e.t,c:e.c,id:"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}));
+    save();renderList();renderMarkers();
+    toast("Импортировано правок: "+items.length);
+  };
+  rd.onerror=()=>toast("Не удалось прочитать файл",1);
+  rd.readAsText(f,"utf-8");
+});
+$("#btnExport").addEventListener("click",()=>{
+  if(!state.edits.length){toast("Пока нет ни одной правки",1);return}
+  const lines=sortedEdits().map(e=>fmtFull(e.t)+" — "+e.c);
+  const blob=new Blob([lines.join("\n")+"\n"],{type:"text/plain;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=new Date().toISOString().slice(0,10)+"-правки.txt";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast("Файл с правками ("+state.edits.length+") скачан");
+});
+
+/* ── clear all (modal) ───────────────── */
+const mShow=()=>{mCount.textContent=state.edits.length;mback.hidden=false;$("#mCancel").focus()};
+const mHide=()=>{mback.hidden=true};
+$("#btnClear").addEventListener("click",()=>{
+  if(!state.edits.length){toast("Список уже пуст",1);return}
+  mShow();
+});
+$("#mCancel").addEventListener("click",mHide);
+mback.addEventListener("click",e=>{if(e.target===mback)mHide()});
+$("#mOk").addEventListener("click",()=>{
+  state.edits.length=0;
+  setMarker(null);
+  setActive(null);
+  save();renderList();renderMarkers();
+  mHide();
+  toast("Все правки удалены");
+});
+
+/* ── keyboard ────────────────────────── */
+document.addEventListener("keydown",e=>{
+  if(!mback.hidden){
+    if(e.key==="Escape"){mHide();e.preventDefault()}
+    return;
+  }
+  const tag=(e.target.tagName||"").toLowerCase();
+  const typing=tag==="input"||tag==="textarea"||tag==="button"||tag==="select"||e.target.isContentEditable;
+  if(typing)return;
+  const k=e.key.toLowerCase();
+  if(e.key===" "){e.preventDefault();togglePlay()}
+  else if(e.key==="ArrowLeft"){e.preventDefault();seekTo((video.currentTime||0)-5,false)}
+  else if(e.key==="ArrowRight"){e.preventDefault();seekTo((video.currentTime||0)+5,false)}
+  else if(k==="c"||k==="с"){openComposer()}
+  else if(k==="a"||k==="ф"){autoMarker();compText.focus()}
+  else if(k==="m"||k==="ь"){$("#btnVol").click()}
+  else if(k==="f"||k==="а"){$("#btnFull").click()}
+});
+
+/* ── init ────────────────────────────── */
+load();
+const savedVol=parseFloat(localStorage.getItem("video-notes:vol"));
+setVol(isFinite(savedVol)&&savedVol>0?savedVol:1);
+$("#btnRate").textContent="1×";
+renderList();
+setMarker(null);
+})();
+</script>
+</body>
+</html>
